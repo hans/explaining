@@ -137,7 +137,7 @@ errorlog = /dev/stderr
 # Number of threads for the psiturk gunicorn server to use. Leave to 1 if using
 # the task runner! Otherwise, dynamically dependent on the number of cpus.
 # If ON_CLOUD=1, then threads defaults to 1.
-;threads = auto
+threads = 1
 
 # The secret key used by flask for any secure functions it uses. Not necessary
 # to set unless using a secure function.

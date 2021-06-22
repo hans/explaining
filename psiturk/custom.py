@@ -24,8 +24,42 @@ custom_code = Blueprint("custom_code", __name__, template_folder="templates", st
 ###############
 # custom routes
 
-@custom_code.route("/item_seq", methods=["GET"])
-def get_item_seq():
-    # TODO maybe not random sample, but ensure balanced sample
-    item_seq = random.choice(BLOCK_SEQUENCES)
-    return jsonify(item_seq)
+# DEV dummy base64 images
+YELLOW_SQUARE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAA4ElEQVR42u3SAQ0AAAQAMJLLJxU1bP4Mz56o4K0UQAABBEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAAAQQQQAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABEAABuGEB1MwkED8Ofe0AAAAASUVORK5CYII="
+RED_SQUARE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAA30lEQVR42u3SAQ0AAAgDoJvc6FrDTchATdLhrRJAAAEEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAABBBBAAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAEQAAG4YQHtTL+BUtmRkAAAAABJRU5ErkJggg=="
+
+@custom_code.route("/trials", methods=["GET"])
+def get_trials():
+    # DEV
+    trials = [
+        {
+            "item_id": 1,
+            "alternation": "swarm",
+            "condition": {"topic": "agent", "subject": "agent"},
+
+            "sentence": "Mary is looking for butterflies, but bees are swarming in the garden.",
+            "scenes": [
+                {"scene_image": YELLOW_SQUARE, "value": 0},
+                {"scene_image": RED_SQUARE, "value": 1},
+            ]
+        },
+        {
+            "item_id": 2,
+            "alternation": "swarm",
+            "condition": {"topic": "location", "subject": "agent"},
+
+            "sentence": "Adam needs to set the table, but ants are crawling on the table.",
+            "scenes": [
+                {"scene_image": YELLOW_SQUARE, "value": 0},
+                {"scene_image": RED_SQUARE, "value": 1},
+            ]
+        },
+
+    ]
+
+    ret = {
+        "phase": ("comprehension", "semantic"),
+        "trials": trials,
+    }
+
+    return jsonify(ret)
