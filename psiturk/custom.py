@@ -15,15 +15,10 @@ L = logging.getLogger(__name__)
 
 config = PsiturkConfig()
 config.load_config()
-myauth = PsiTurkAuthorization(config) # if you want to add a password protected route use this
+# myauth = PsiTurkAuthorization(config) # if you want to add a password protected route use this
 
 # explore the Blueprint
 custom_code = Blueprint("custom_code", __name__, template_folder="templates", static_folder="static")
-
-
-block_sequences_f = Path("/materials/all_items.json")
-with block_sequences_f.open("r") as blocks_f:
-    BLOCK_SEQUENCES = json.load(blocks_f)["block_sequences"]
 
 
 ###############
