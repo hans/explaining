@@ -1,19 +1,23 @@
 {
-  "name": "frontend",
-  "version": "1.0.0",
+  "name": "explaining",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^19.0.0",
-    "@rollup/plugin-node-resolve": "^13.0.0",
-    "rollup": "^2.53.1"
+    "jspsych": "jspsych -e experiment",
+    "start": "npm run jspsych -- run",
+    "build": "npm run jspsych -- build",
+    "jatos": "npm run jspsych -- jatos"
   },
   "dependencies": {
+    "jspsych": "github:jspsych/jsPsych#v6.3.1",
+    "underscore": "^1.13.1"
+  },
+  "devDependencies": {
     "jspsych-builder": "^2.1.0"
-  }
+  },
+  "browserslist": [
+    "last 2 versions",
+    "ie >= 9",
+    "ios >= 7"
+  ]
 }
