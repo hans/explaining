@@ -1,14 +1,6 @@
 /**
- * @title explaining
- * @description
- * @version 0.1.0
- *
- * The following lines specify which media directories will be packaged and preloaded by jsPsych.
- * Modify them to arbitrary paths (or comma-separated lists of paths) within the `media` directory,
- * or delete them.
- * @imageDir images
- * @audioDir audio
- * @videoDir video
+ * Tests whether construction choice has an effect on inferred meaning for
+ * *swarm*-construction.
  */
 
 // You can import the custom stylesheets you use (.scss or .css).
@@ -24,7 +16,7 @@ import "jspsych/plugins/jspsych-fullscreen";
 import { get_trials } from "../materials";
 import * as trials from "../trials";
 
-const EXPERIMENT_NAME = "00_comprehension_construction-meaning";
+const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
 const MATERIALS_HASH = "TODO";
 
 export async function createTimeline() {
@@ -47,6 +39,7 @@ export async function createTimeline() {
       labels: ["completely empty", "completely full"],
 
       data: {
+        materials_id: MATERIALS_HASH,
         item_id: trial.item_id,
         condition_id: trial.condition_id,
         stim_sentence: trial.sentence,
