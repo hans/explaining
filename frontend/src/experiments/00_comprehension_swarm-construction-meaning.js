@@ -1,6 +1,10 @@
 /**
  * Tests whether construction choice has an effect on inferred meaning for
  * *swarm*-construction.
+ *
+ * @title 00_comprehension_swarm-construction-meaning
+ * @description
+ * @version
  */
 
 // You can import the custom stylesheets you use (.scss or .css).
