@@ -12,9 +12,9 @@ import "../../styles/main.scss";
 
 import * as _ from "underscore";
 
-// jsPsych plugins
+// jsPsych and plugins
 import "jspsych/plugins/jspsych-html-keyboard-response";
-import "jspsych/plugins/jspsych-html-slider-response";
+import "../plugins/html-slider-response-with-copout";
 import "jspsych/plugins/jspsych-fullscreen";
 
 import { get_trials } from "../materials";
@@ -37,7 +37,7 @@ export async function createTimeline() {
       `${trial.location_determiner} ${trial.location}?`).trim();
 
     return {
-      type: "html-slider-response",
+      type: "html-slider-response-with-copout",
       stimulus: stimulus,
       prompt: prompt,
       labels: ["completely empty", "completely full"],

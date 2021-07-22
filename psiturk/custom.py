@@ -4,7 +4,7 @@ import random
 
 import logging
 
-from flask import Blueprint, jsonify, send_file
+from flask import Blueprint, jsonify, send_file, request
 
 from psiturk.psiturk_config import PsiturkConfig
 from psiturk.user_utils import PsiTurkAuthorization
@@ -63,3 +63,26 @@ def get_trials():
     }
 
     return jsonify(ret)
+
+
+@custom_code.route("/trials/<string:experiment>")
+def get_trials_for_experiment(experiment: str):
+    # Get unique materials ID
+    try:
+        materials_id = request.args["materials"]
+    except KeyError:
+        # TODO use latest materials by default
+        return 'missing materials parameter', 400
+
+    if "/" in materials_id or ".." in materials_id:
+        return 'STOP, injection attack detected', 400
+
+    # Try loading.
+    materials_path = Path("/materials") / (f"{materials_id}.json")
+    if not materials_path.exists():
+        return f'could not find materials with id {materials_id}', 404
+
+    with materials_path.open():
+        materials = json.load(materials_path)
+
+    return jsonify(materials)
