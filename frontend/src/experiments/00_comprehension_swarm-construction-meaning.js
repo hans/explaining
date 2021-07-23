@@ -21,7 +21,7 @@ import { get_trials } from "../materials";
 import * as trials from "../trials";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
-const MATERIALS_HASH = "TODO";
+const MATERIALS_HASH = "swarm-000-base";
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_HASH);
@@ -29,7 +29,7 @@ export async function createTimeline() {
   let timeline = [trials.age_block, trials.demo_block];
 
   // Prepare main experimental trials.
-  timeline = timeline.concat(_.map(trial_materials, (trial) => {
+  timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
     const stimulus = trial.sentence; // TODO format template with stim sentence
     const prompt = (`
       How ${trial.agent_plural ? "many" : "much"} ${trial.agent} ` +

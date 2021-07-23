@@ -85,9 +85,78 @@ def register_trial_renderer(experiment_name):
     return decorator
 
 
-@regregister_trial_renderer("00_comprehension_swarm-construction-meaning")
+@register_trial_renderer("00_comprehension_swarm-construction-meaning")
 class ComprehensionSwarmMeaningRenderer(TrialRenderer):
-    pass
+
+    NUM_TRIALS = 20
+
+    def build_trial(self, item, condition):
+        trial = {
+            "item_id": item["id"],
+            "condition_id": condition,
+
+            "agent": item["A"],
+            "location": item["L"],
+            "verb": item["V"],
+
+            "agent_plural": item["A countable?"],
+            "location_determiner": item["L det"],
+            "preposition": item["P"],
+            "conjunction": item["conj"],
+        }
+
+        # build sentence based on condition
+        agent_is_topic, agent_is_subject = condition
+        sentence_parts = [
+            item["topic A"] if agent_is_topic else item["topic L"],
+            ", ",
+            item["conj"], " "
+        ]
+
+        if agent_is_subject:
+            sentence_parts.extend([
+                item["A"], " "
+                "are" if item["A countable?"] else "is", " ",
+                item["V"], "ing ",
+                item["P"], " ",
+                item["L det"], " ",
+                item["L"],
+            ])
+        else:
+            sentence_parts.extend([
+                item["L det"], " ",
+                item["L"], " is ",
+                item["V"], "ing with ",
+                item["A"],
+            ])
+
+        sentence_parts.append(".")
+        trial["sentence"] = "".join(sentence_parts)
+
+        return trial
+
+    def get_trials(self, materials, materials_id=None):
+        # drop any materials marked for exclusion
+        items = [item for item in materials["items"] if not item["exclude"]]
+
+        items = random.sample(items, self.NUM_TRIALS)
+
+        # sample random T--A settings for each item
+        condition_choices = [
+            (0, 0),  # topic = a, subject = a
+            (0, 1),  # topic = a, subject = l
+            (1, 0),
+            (1, 1),
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)
+
+        trials = [self.build_trial(item, condition)
+                  for item, condition in zip(items, trial_conditions)]
+        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
+                   trials=trials)
+
+        return ret
 
 
 @custom_code.route("/trials/<string:experiment>")
@@ -107,12 +176,12 @@ def get_trials_for_experiment(experiment: str):
     if not materials_path.exists():
         return f'could not find materials with id {materials_id}', 404
 
-    with materials_path.open():
-        materials = json.load(materials_path)
+    with materials_path.open() as f:
+        materials = json.load(f)
 
     # render trials from materials
     try:
-        renderer = TRIAL_RENDERERS[experiment]
+        renderer = TRIAL_RENDERERS[experiment](experiment)
     except KeyError:
         return f'cannot find trial renderer for experiment {experiment}', 500
 
