@@ -65,6 +65,31 @@ def get_trials():
     return jsonify(ret)
 
 
+class TrialRenderer(object):
+
+    def __init__(self, experiment_name):
+        self.experiment_name = experiment_name
+
+    def get_trials(materials, materials_id: str = None):
+        raise NotImplementedError()
+
+
+TRIAL_RENDERERS = {}
+
+
+def register_trial_renderer(experiment_name):
+    def decorator(cls):
+        TRIAL_RENDERERS[experiment_name] = cls
+        return cls
+
+    return decorator
+
+
+@regregister_trial_renderer("00_comprehension_swarm-construction-meaning")
+class ComprehensionSwarmMeaningRenderer(TrialRenderer):
+    pass
+
+
 @custom_code.route("/trials/<string:experiment>")
 def get_trials_for_experiment(experiment: str):
     # Get unique materials ID
@@ -85,4 +110,12 @@ def get_trials_for_experiment(experiment: str):
     with materials_path.open():
         materials = json.load(materials_path)
 
-    return jsonify(materials)
+    # render trials from materials
+    try:
+        renderer = TRIAL_RENDERERS[experiment]
+    except KeyError:
+        return f'cannot find trial renderer for experiment {experiment}', 500
+
+    trials = renderer.get_trials(materials, materials_id)
+
+    return jsonify(trials)
