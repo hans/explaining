@@ -11,7 +11,7 @@ from flask import Blueprint, jsonify, send_file, request
 from psiturk.psiturk_config import PsiturkConfig
 from psiturk.user_utils import PsiTurkAuthorization
 
-from .renderers import TRIAL_RENDERERS
+from renderers import TRIAL_RENDERERS
 
 
 logging.basicConfig(level=logging.DEBUG)

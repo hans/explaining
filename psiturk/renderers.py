@@ -7,7 +7,7 @@ import functools
 import random
 import re
 
-from .util import random_name
+from util import random_name
 
 
 class TrialRenderer(object):
@@ -85,9 +85,11 @@ class SwarmPilotRenderer(TrialRenderer):
 
         # Find--replace person name variables and related possessives
         field = re.sub(
-            r"%PERSON(\d+)(_[^%]+)?%",
+            r"%PERSON(\d+)(?:_([^%]+))?%",
             lambda match: self._replace_name(match.group(1), match.group(2)),
             field)
+
+        return field
 
     def build_trial(self, item, condition):
         self._reset_var_cache()
@@ -103,8 +105,6 @@ class SwarmPilotRenderer(TrialRenderer):
             "item_id": item["id"],
             "condition_id": condition,
 
-            "topic_setup": p("topic A" if agent_is_topic else "topic L"),
-
             "agent": item["A"],
             "location": item["L"],
             "verb": item["V"],
@@ -117,6 +117,15 @@ class SwarmPilotRenderer(TrialRenderer):
             "conjunction": item["conj"],
         }
 
+        trial["topic_clause"] = {
+            "agent": p("topic A"),
+            "location": p("topic L"),
+        }
+
+        from pprint import pprint
+        pprint(trial)
+        import sys
+        sys.stdout.flush()
         trial["critical_clause"] = {
             "agent": "".join([
                 trial["agent"], " ",
@@ -145,7 +154,7 @@ class SwarmPilotRenderer(TrialRenderer):
 @register_trial_renderer("00_comprehension_swarm-construction-meaning")
 class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
-    def build_trial(item, condition):
+    def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
 
         _, agent_is_subject = condition
@@ -179,13 +188,16 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 @register_trial_renderer("01_production_swarm-topicality")
 class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
 
-    def build_trial(item, condition):
+    def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
 
+        agent_is_topic, _ = condition
+        topic_setup = trial["topic_clause"]["agent" if agent_is_topic
+                                            else "location"]
         trial["sentences"] = {
-            "agent": "".join([trial["topic_setup"], ", ", trial["conjunction"],
+            "agent": "".join([topic_setup, ", ", trial["conjunction"],
                               " ", trial["critical_clause"]["agent"], "."]),
-            "location": "".join([trial["topic_setup"], ", ", trial["conjunction"],
+            "location": "".join([topic_setup, ", ", trial["conjunction"],
                                  " ", trial["critical_clause"]["location"], "."])
         }
 

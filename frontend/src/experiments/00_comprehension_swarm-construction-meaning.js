@@ -21,7 +21,7 @@ import { get_trials } from "../materials";
 import * as trials from "../trials";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
-const MATERIALS_HASH = "swarm-000-base";
+const MATERIALS_HASH = "swarm-001-more";
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_HASH);

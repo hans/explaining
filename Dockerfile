@@ -17,6 +17,8 @@ RUN cd /frontend && npm run build experiments/${EXPERIMENT}
 
 FROM cpllab/psiturk:3.2.0
 
+RUN pip install names
+
 COPY materials /materials
 COPY psiturk /psiturk
 RUN rm -f /psiturk/.psiturkconfig
