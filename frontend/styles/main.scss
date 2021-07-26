@@ -1,3 +1,12 @@
 .jspsych-display-element {
   background-color: #ffffff;
 }
+
+.jspsych-html-slider-response-post-stimulus {
+  margin: 1em 0;
+}
+
+// Make slider container transparent when slider is disabled
+.jspsych-html-slider-response-disabled {
+  opacity: 40%;
+}

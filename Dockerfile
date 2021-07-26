@@ -26,3 +26,4 @@ RUN rm -f /psiturk/.psiturkconfig
 # copy in frontend webpack script
 ARG EXPERIMENT
 COPY --from=frontend_builder /frontend/.jspsych-builder/experiments/${EXPERIMENT}/js/app.js /psiturk/static/js/app.js
+COPY --from=frontend_builder /frontend/.jspsych-builder/experiments/${EXPERIMENT}/css/main.css /psiturk/static/css/app.css
