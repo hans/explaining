@@ -19,6 +19,7 @@ import "jspsych/plugins/jspsych-fullscreen";
 
 import { get_trials } from "../materials";
 import * as trials from "../trials";
+import psiturk from "../psiturk";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
 const MATERIALS_HASH = "swarm-001-more";
@@ -30,7 +31,7 @@ export async function createTimeline() {
 
   // Prepare main experimental trials.
   timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
-    const stimulus = trial.sentence; // TODO format template with stim sentence
+    const stimulus = trial.sentence;
     const prompt = (`
       How ${trial.agent_plural ? "many" : "much"} ${trial.agent} ` +
       `${trial.agent_plural ? "are" : "is"} ${trial.preposition} ` +
@@ -39,8 +40,11 @@ export async function createTimeline() {
     return {
       type: "html-slider-response-with-copout",
       stimulus: stimulus,
-      prompt: prompt,
+      pre_stimulus_prompt: "Please read the following sentence:",
+      post_stimulus_prompt: prompt,
+      copout_text: "This sentence doesn't make sense to me.",
       labels: ["completely empty", "completely full"],
+      require_movement: true,
 
       data: {
         materials_id: MATERIALS_HASH,
@@ -54,4 +58,19 @@ export async function createTimeline() {
   timeline.push(trials.comments_block);
 
   return timeline;
+}
+
+
+export async function on_finish() {
+  psiturk.saveData({
+    // DEV
+    success: () => jsPsych.data.displayData(),
+    // success: () => psiturk.completeHIT(),
+    error: () => console.log("error saving data"),
+  });
+}
+
+
+export async function on_data_update(data) {
+  psiturk.recordTrialData(data);
 }

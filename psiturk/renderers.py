@@ -122,10 +122,6 @@ class SwarmPilotRenderer(TrialRenderer):
             "location": p("topic L"),
         }
 
-        from pprint import pprint
-        pprint(trial)
-        import sys
-        sys.stdout.flush()
         trial["critical_clause"] = {
             "agent": "".join([
                 trial["agent"], " ",
@@ -153,6 +149,9 @@ class SwarmPilotRenderer(TrialRenderer):
 
 @register_trial_renderer("00_comprehension_swarm-construction-meaning")
 class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
+
+    # DEV
+    NUM_TRIALS = 2
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
