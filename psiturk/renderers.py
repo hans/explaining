@@ -98,8 +98,6 @@ class SwarmPilotRenderer(TrialRenderer):
         p = functools.partial(self.process_field, item)
 
         agent_is_topic, agent_is_subject = condition
-        subject_is_plural = item["A countable?"] \
-            if agent_is_subject else item["L plural?"]
 
         trial = {
             "item_id": item["id"],
@@ -108,7 +106,6 @@ class SwarmPilotRenderer(TrialRenderer):
             "agent": item["A"],
             "location": item["L"],
             "verb": item["V"],
-            "auxiliary": "are" if subject_is_plural else "is",
 
             "agent_plural": item["A countable?"],
             "location_plural": item["L plural?"],
@@ -126,7 +123,7 @@ class SwarmPilotRenderer(TrialRenderer):
         trial["critical_clause"] = {
             "agent": "".join([
                 trial["agent"], " ",
-                trial["auxiliary"], " ",
+                "are" if trial["agent_plural"] else "is", " ",
                 trial["verb"], "ing ",
                 trial["preposition"], " ",
                 trial["location_determiner"], " ",
@@ -136,7 +133,7 @@ class SwarmPilotRenderer(TrialRenderer):
             "location": "".join([
                 trial["location_determiner"], " ",
                 trial["location"], " ",
-                trial["auxiliary"], " ",
+                "are" if trial["location_plural"] else "is", " ",
                 trial["verb"], "ing with ",
                 trial["agent"],
             ]),
@@ -152,7 +149,7 @@ class SwarmPilotRenderer(TrialRenderer):
 class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
     # DEV
-    NUM_TRIALS = 2
+    NUM_TRIALS = 20
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
@@ -197,6 +194,9 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 @register_trial_renderer("01_production_swarm-topicality")
 class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
 
+    # DEV
+    NUM_TRIALS = 2
+
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
 
@@ -215,12 +215,11 @@ class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
     def get_trials(self, materials, materials_id=None):
         items = self._filter_and_sample_materials(materials)
 
-        # sample random subject and topic settings for each item
+        # sample random topic settings for each item. both subject options
+        # presented to exp subject
         condition_choices = [
             (0, 0),  # topic = a, subject = a
-            (0, 1),  # topic = a, subject = l
-            (1, 0),
-            (1, 1)
+            (1, 0),  # topic = b, subject = a
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)

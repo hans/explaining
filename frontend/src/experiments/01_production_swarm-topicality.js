@@ -13,7 +13,7 @@ import "../../styles/main.scss";
 import * as _ from "underscore";
 
 // jsPsych plugins
-import "jspsych/plugins/jspsych-survey-multi-choice";
+import "../plugins/survey-multi-choice-ext";
 
 import { get_trials } from "../materials";
 import * as trials from "../trials";
@@ -33,10 +33,11 @@ export async function createTimeline() {
   timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
     // Randomly order sentence options.
     const options = _.shuffle(["agent", "location"]);
-    const sentences = options.map(o => trial.sentences[o]);
+    const sentences = options.map(o => ({value: o, label: trial.sentences[o]}));
 
     return {
-      type: "survey-multi-choice",
+      type: "survey-multi-choice-ext",
+      required: true,
 
       questions: [
         {
@@ -53,7 +54,8 @@ export async function createTimeline() {
         materials_id: MATERIALS_HASH,
         item_id: trial.item_id,
         condition_id: trial.condition_id,
-        option_order: options,
+
+        ordered_options: sentences,
       },
     }
   }));
