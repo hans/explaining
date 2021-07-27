@@ -22,26 +22,24 @@ import * as trials from "../trials";
 import psiturk from "../psiturk";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
-const MATERIALS_HASH = "swarm-001-more";
+const MATERIALS_HASH = "swarm-002-promptP";
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_HASH);
 
-  let timeline = [trials.age_block, trials.demo_block];
+  // DEV: skip demographic stuff
+  let timeline = [];
+  // let timeline = [trials.age_block, trials.demo_block];
 
   // Prepare main experimental trials.
   timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
     const stimulus = trial.sentence;
-    const prompt = (`
-      How ${trial.agent_plural ? "many" : "much"} ${trial.agent} ` +
-      `${trial.agent_plural ? "are" : "is"} ${trial.preposition} ` +
-      `${trial.location_determiner} ${trial.location}?`).trim();
 
     return {
       type: "html-slider-response-with-copout",
       stimulus: stimulus,
       pre_stimulus_prompt: "Please read the following sentence:",
-      post_stimulus_prompt: prompt,
+      post_stimulus_prompt: trial.prompt,
       copout_text: "This sentence doesn't make sense to me.",
       labels: ["completely empty", "completely full"],
       require_movement: true,

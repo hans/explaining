@@ -71,8 +71,8 @@ class SwarmPilotRenderer(TrialRenderer):
         items = [item for item in materials["items"] if not item["exclude"]]
 
         # drop materials with missing fields
-        critical_fields = ["A", "L", "V", "P", "L det", "topic A", "topic L",
-                           "conj"]
+        critical_fields = ["A", "L", "V", "P", "prompt P", "L det",
+                           "topic A", "topic L", "conj"]
         items = [item for item in materials["items"]
                  if not any(not item[field] for field in critical_fields)]
 
@@ -114,6 +114,7 @@ class SwarmPilotRenderer(TrialRenderer):
             "location_plural": item["L plural?"],
             "location_determiner": p("L det"),
             "preposition": item["P"],
+            "prompt_preposition": item["prompt P"],
             "conjunction": item["conj"],
         }
 
@@ -160,6 +161,15 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
         clause = trial["critical_clause"]["agent" if agent_is_subject
                                           else "location"]
         trial["sentence"] = clause.capitalize() + "."
+
+        trial["prompt"] = " ".join([
+            "How", "many" if trial["agent_plural"] else "much",
+            trial["agent"],
+            "are" if trial["agent_plural"] else "is",
+            trial["prompt_preposition"],
+            trial["location_determiner"],
+            trial["location"]
+        ]) + "?"
 
         return trial
 
