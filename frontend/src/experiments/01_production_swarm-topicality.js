@@ -70,7 +70,7 @@ export async function createTimeline() {
             "The following two sentences differ in the way they are " +
             "completed after the <em>and</em>. Which sentence sounds more " +
             "natural to you?",
-          options: [
+          options: _.shuffle([
             {
               value: "good",
               label: "John went to the store and he bought a guitar.",
@@ -79,18 +79,11 @@ export async function createTimeline() {
               value: "bad",
               label: "John went to the store and a guitar was bought by him.",
             },
-          ],
+          ]),
         },
       ],
 
-      data: {
-        experiment_id: EXPERIMENT_NAME,
-        materials_id: MATERIALS_HASH,
-        item_id: trial.item_id,
-        condition_id: trial.condition_id,
-
-        ordered_options: sentences,
-      },
+      data: { practice_sentence: true },
     },
 
     {
