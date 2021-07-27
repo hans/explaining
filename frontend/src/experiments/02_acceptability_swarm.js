@@ -50,5 +50,6 @@ export async function createTimeline() {
 }
 
 
+export const show_progress_bar = true;
 export let on_finish = default_on_finish;
 export let on_data_update = default_on_data_update;
