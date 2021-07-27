@@ -19,7 +19,7 @@ import "jspsych/plugins/jspsych-fullscreen";
 
 import { get_trials } from "../materials";
 import * as trials from "../trials";
-import psiturk from "../psiturk";
+import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
 const MATERIALS_HASH = "swarm-002-promptP";
@@ -45,6 +45,7 @@ export async function createTimeline() {
       require_movement: true,
 
       data: {
+        experiment_id: EXPERIMENT_NAME,
         materials_id: MATERIALS_HASH,
         item_id: trial.item_id,
         condition_id: trial.condition_id,
@@ -59,16 +60,5 @@ export async function createTimeline() {
 }
 
 
-export async function on_finish() {
-  psiturk.saveData({
-    // DEV
-    success: () => jsPsych.data.displayData(),
-    // success: () => psiturk.completeHIT(),
-    error: () => console.log("error saving data"),
-  });
-}
-
-
-export async function on_data_update(data) {
-  psiturk.recordTrialData(data);
-}
+export let on_finish = default_on_finish;
+export let on_data_update = default_on_data_update;
