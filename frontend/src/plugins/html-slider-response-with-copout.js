@@ -135,6 +135,14 @@ plugin.trial = function(display_element, trial) {
       </div>`;
   }
 
+  const copout_html = trial.copout_text == null ? "" : `
+  <div class="jspsych-html-slider-copout-response">
+    <input type="checkbox" id="jspsych-html-slider-copout-checkbox" />
+    &nbsp;<label for="jspsych-html-slider-copout-checkbox">
+      ${trial.copout_text}
+    </label>
+  </div>`;
+
   var html = `
   <div id="jspsych-html-slider-response-wrapper" style="margin: 100px 0px;">
     ${pre_stimulus_prompt}
@@ -152,12 +160,7 @@ plugin.trial = function(display_element, trial) {
       ${label_html}
     </div>
 
-    <div class="jspsych-html-slider-copout-response">
-      <input type="checkbox" id="jspsych-html-slider-copout-checkbox" />
-      &nbsp;<label for="jspsych-html-slider-copout-checkbox">
-        ${trial.copout_text}
-      </label>
-    </div>
+    ${copout_html}
   </div>
 
   ${trial.prompt || ""}

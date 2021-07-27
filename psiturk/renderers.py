@@ -230,3 +230,39 @@ class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
                    trials=trials)
 
         return ret
+
+
+@register_trial_renderer("02_acceptability_swarm")
+class AcceptabilitySwarmRenderer(SwarmPilotRenderer):
+
+    # DEV
+    NUM_TRIALS = 2
+
+    def build_trial(self, item, condition):
+        trial = super().build_trial(item, condition)
+
+        _, agent_is_subject = condition
+
+        sentence_key = "agent" if agent_is_subject else "location"
+        trial["sentence"] = \
+            trial["critical_clause"][sentence_key].capitalize() + "."
+
+        return trial
+
+    def get_trials(self, materials, materials_id=None):
+        items = self._filter_and_sample_materials(materials)
+
+        # sample random subject settings. topic clause not used in this exp
+        condition_choices = [
+            (0, 1),  # topic = a, subject = a
+            (0, 1),  # topic = b, subject = a
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)
+
+        trials = [self.build_trial(item, condition)
+                  for item, condition in zip(items, trial_conditions)]
+        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
+                   trials=trials)
+
+        return ret
