@@ -1,0 +1,29 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+```{r}
+df <- read_csv("responses.csv")
+glimpse(df)
+```
+```{r}
+filtered_df <- df %>% filter(!slider_copout)
+```
+
+
+```{r}
+model <- lmer(slider_value_normed ~ agent_is_subject + (1|item_id) + (1|uniqueid),
+              data=filtered_df)
+summary(model)
+```
+```{r}
+ranef(model)
+```
+

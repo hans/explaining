@@ -12,7 +12,7 @@ import pandas as pd
 L = logging.getLogger(__name__)
 
 
-PSITURK_DB_PATH = "psiturk/participants.db"
+PSITURK_DB_PATH = "data/participants.db"
 PSITURK_DATA_TABLE = "turkdemo"
 
 
@@ -43,7 +43,9 @@ def get_trials_df(raw_results, extract_data_fields=()):
     Split raw data into a data frame which has one row per subject--trial.
     """
     trials = []
+    from pprint import pprint
     for uid, row in raw_results.iterrows():
+        print(uid)
         # TODO process other status codes
         if pd.isna(row.datastring):
             L.warn("Missing datastring for uid %s. Status was %i." % (uid, row.status))
@@ -65,7 +67,7 @@ def get_trials_df(raw_results, extract_data_fields=()):
             # Process responses from survey plugin.
             if tdata["trial_type"].startswith("survey"):
                 # Add a single row per survey question.
-                responses = json.loads(tdata["responses"])
+                responses = tdata["response"]
                 for idx in range(len(responses)):
                     key = "Q%i" % idx
                     
@@ -73,6 +75,13 @@ def get_trials_df(raw_results, extract_data_fields=()):
                     idx_info["survey_question_idx"] = idx
                     idx_info["survey_answer"] = responses[key]
                     trials.append(idx_info)
+            elif tdata["trial_type"] == "html-slider-response-with-copout":
+                info.update({
+                    "slider_value": tdata["response"],
+                    "slider_copout": tdata.get("copout", False),
+                })
+                
+                trials.append(info)
             else:
                 trials.append(info)
             
