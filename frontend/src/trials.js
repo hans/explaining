@@ -7,6 +7,17 @@ import "jspsych/plugins/jspsych-survey-text";
 import "jspsych/plugins/jspsych-survey-multi-choice";
 import "./plugins/html-slider-response-with-copout";
 
+
+export function add_data_fields(trial_object, data_fields) {
+  trial_object = {
+    ...trial_object,
+    data: { ...trial_object.data, ...data_fields },
+  }
+
+  return trial_object;
+}
+
+
  export const age_block = {
    type: "survey-text",
    preamble: "Please provide us with some demographic information.",
@@ -50,6 +61,7 @@ export const acceptability_block = {
 
   min: 1,
   max: 7,
+  slider_start: 4,
 }
 
 
@@ -69,7 +81,7 @@ export const acceptability_intro_sequence = [
       "<p class='jspsych-instructions'>" +
       "<p>You are <em>not</em> being asked to judge the plausibility of the " +
       "sentence; you are simply being asked to judge whether the sentence " +
-      "sounds like a <strong>possible sentence of English</strong>.</p>" +
+      "sounds like a <strong>natural sentence of English</strong>.</p>" +
       "<p>You are also not being asked to judge whether each sentence is " +
       "acceptable according to a 'school grammar.' As a native speaker of " +
       "English, you have <strong>intuitions or gut feelings</strong> about " +
@@ -78,19 +90,41 @@ export const acceptability_intro_sequence = [
 
       "<p class='jspsych-instructions'>" +
       "Sometimes you may not be sure which answer is correct. When this " +
-      "happens, go with your first instinct. Don't over think it!" +
+      "happens, go with your first instinct. Don't overthink it!" +
       "</p>",
 
       "<p class='jspsych-instructions'>" +
-      "Let's begin with one practice sentence." +
+      "Let's begin with a few practice sentences." +
       "</p>",
     ]
   },
 
   {
-    stimulus: "This is a practice sentence. Please rate this a 4.",
-    data: {practice_sentence: true},
-    ...acceptability_block
+    ...acceptability_block,
+
+    pre_stimulus_prompt:
+      "The following sentence is completely unacceptable. Please rate it a 1.",
+    stimulus: "Sally sent yesterday to every kid in the class cookies.",
+    data: {practice_sentence: "1-1"},
+  },
+
+  {
+    ...acceptability_block,
+
+    pre_stimulus_prompt:
+      "The following sentence is somewhat acceptable. Please rate it a 4.",
+    stimulus:
+      "Matthew bought this week two records.",
+    data: {practice_sentence: "4-1"},
+  },
+
+  {
+    ...acceptability_block,
+
+    pre_stimulus_prompt:
+      "The following sentence is perfectly acceptable. Please rate it a 7.",
+    stimulus: "The children are playing in the backyard.",
+    data: {practice_sentence: "7-1"},
   },
 
   {

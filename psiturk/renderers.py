@@ -15,7 +15,15 @@ class TrialRenderer(object):
     def __init__(self, experiment_name):
         self.experiment_name = experiment_name
 
-    def get_trials(materials, materials_id: str = None):
+    def get_trials(materials: list, materials_id: str, args=None):
+        """
+        Render trials for the given set of materials.
+
+        Args:
+            materials:
+            materials_id:
+            args: Other arguments from the request.
+        """
         raise NotImplementedError()
 
 
@@ -141,7 +149,7 @@ class SwarmPilotRenderer(TrialRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id=None):
+    def get_trials(self, materials, materials_id, args=None):
         raise NotImplementedError()
 
 
@@ -170,7 +178,8 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id=None):
+    def get_trials(self, materials, materials_id, args=None):
+        materials, = materials
         items = self._filter_and_sample_materials(materials)
 
         # sample random subject settings for each item
@@ -195,7 +204,7 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
 
     # DEV
-    NUM_TRIALS = 2
+    NUM_TRIALS = 20
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
@@ -212,7 +221,8 @@ class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id=None):
+    def get_trials(self, materials, materials_id, args=None):
+        materials, = materials
         items = self._filter_and_sample_materials(materials)
 
         # sample random topic settings for each item. both subject options
@@ -232,11 +242,36 @@ class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
         return ret
 
 
+class AcceptabilityFillerMixin(object):
+
+    def get_filler_trials(self, materials, num_trials: int):
+        bad_items = [item for item in materials["items"] if item["rating"] == "bad"]
+        good_items = [item for item in materials["items"] if item["rating"] == "good"]
+
+        # Sample an equal balance of "bad" and "good"
+        num_bad = num_trials // 2
+
+        bad_trials = random.sample(bad_items, num_bad)
+        good_trials = random.sample(good_items, num_trials - num_bad)
+        all_trials = bad_trials + good_trials
+
+        all_trials = [{
+            "item_id": trial["id"],
+            "condition_id": ["filler", trial["rating"]],
+            "sentence": trial["sentence"],
+        } for trial in all_trials]
+
+        random.shuffle(all_trials)
+
+        return all_trials
+
+
 @register_trial_renderer("02_acceptability_swarm")
-class AcceptabilitySwarmRenderer(SwarmPilotRenderer):
+class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
 
     # DEV
-    NUM_TRIALS = 2
+    TOTAL_NUM_TRIALS = 40
+    NUM_EXP_TRIALS = 20
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
@@ -249,7 +284,7 @@ class AcceptabilitySwarmRenderer(SwarmPilotRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id=None):
+    def get_exp_trials(self, materials):
         items = self._filter_and_sample_materials(materials)
 
         # sample random subject settings. topic clause not used in this exp
@@ -262,6 +297,19 @@ class AcceptabilitySwarmRenderer(SwarmPilotRenderer):
 
         trials = [self.build_trial(item, condition)
                   for item, condition in zip(items, trial_conditions)]
+        return trials
+
+    def get_trials(self, materials, materials_id, args=None):
+        exp_materials, filler_materials = materials
+
+        exp_trials = self.get_exp_trials(exp_materials)
+
+        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
+        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
+
+        trials = exp_trials + filler_trials
+        random.shuffle(trials)
+
         ret = dict(experiment=self.experiment_name, materials_id=materials_id,
                    trials=trials)
 

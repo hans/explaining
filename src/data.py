@@ -43,9 +43,7 @@ def get_trials_df(raw_results, extract_data_fields=()):
     Split raw data into a data frame which has one row per subject--trial.
     """
     trials = []
-    from pprint import pprint
     for uid, row in raw_results.iterrows():
-        print(uid)
         # TODO process other status codes
         if pd.isna(row.datastring):
             L.warn("Missing datastring for uid %s. Status was %i." % (uid, row.status))

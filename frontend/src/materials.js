@@ -7,8 +7,9 @@
  * @param materials_hash optional hashcode referring to the materials version to
  *                       be used. by default the latest materials are used.
  */
-export async function get_trials(experiment, materials_hash) {
+export async function get_trials(experiment, materials_hash, extra_args = {}) {
   const resp = await fetch(`/trials/${experiment}?` + new URLSearchParams({
+    ...extra_args,
     uniqueId: window.uniqueId,
     materials: materials_hash
   }));

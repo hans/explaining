@@ -74,21 +74,29 @@ def get_trials():
 def get_trials_for_experiment(experiment: str):
     # Get unique materials ID
     try:
-        materials_id = request.args["materials"]
+        materials_id = request.args["materials"].split(",")
     except KeyError:
         # TODO use latest materials by default
         return 'missing materials parameter', 400
 
-    if "/" in materials_id or ".." in materials_id:
-        return 'STOP, injection attack detected', 400
+    def load_materials(materials_id):
+        if ".." in materials_id:
+            raise ValueError('STOP, injection attack detected', 400)
 
-    # Try loading.
-    materials_path = Path("/materials") / (f"{materials_id}.json")
-    if not materials_path.exists():
-        return f'could not find materials with id {materials_id}', 404
+        # Try loading.
+        materials_path = Path("/materials") / (f"{materials_id}.json")
+        if not materials_path.exists():
+            raise ValueError(f'could not find materials with id {materials_id}', 404)
 
-    with materials_path.open() as f:
-        materials = json.load(f)
+        with materials_path.open() as f:
+            materials = json.load(f)
+
+        return materials
+
+    try:
+        materials = tuple([load_materials(id) for id in materials_id])
+    except ValueError as exc:
+        return exc.args
 
     # render trials from materials
     try:
@@ -96,6 +104,6 @@ def get_trials_for_experiment(experiment: str):
     except KeyError:
         return f'cannot find trial renderer for experiment {experiment}', 500
 
-    trials = renderer.get_trials(materials, materials_id)
+    trials = renderer.get_trials(materials, materials_id, args=request.args)
 
     return jsonify(trials)
