@@ -144,7 +144,7 @@ plugin.trial = function(display_element, trial) {
   </div>`;
 
   var html = `
-  <div id="jspsych-html-slider-response-wrapper" style="margin: 100px 0px;">
+  <div id="jspsych-html-slider-response-wrapper">
     ${pre_stimulus_prompt}
     <div id="jspsych-html-slider-response-stimulus">
       ${trial.stimulus}

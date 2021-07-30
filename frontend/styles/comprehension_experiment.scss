@@ -1,0 +1,18 @@
+.jspsych-content {
+  width: 50%;
+}
+
+#jspsych-html-slider-response-wrapper {
+  width: 100%;
+  margin: 100px 0;
+}
+
+.jspsych-swarm-trial-practice #jspsych-html-slider-response-wrapper:before {
+  background-color: #eee;
+  display: block;
+  font-variant: small-caps;
+  content: "Practice Round";
+  padding: 0.5em 0;
+  margin-bottom: 1em;
+  border-bottom: 1px solid #ccc;
+}

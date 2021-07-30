@@ -9,6 +9,7 @@
 
 // You can import the custom stylesheets you use (.scss or .css).
 import "../../styles/main.scss";
+import "../../styles/comprehension_experiment.scss";
 
 import * as _ from "underscore";
 
@@ -33,7 +34,7 @@ const slider_trial_template = {
   type: "html-slider-response-with-copout",
   pre_stimulus_prompt: "Please read the following sentence:",
   copout_text: "This sentence doesn't make sense to me.",
-  labels: ["completely empty", "completely full"],
+  labels: ["0% / none", "100% / as much/many as there possibly could be"],
   require_movement: true,
 };
 
@@ -72,13 +73,13 @@ export async function createTimeline() {
         </p>
 
         <p class="jspsych-instructions">
-          On the next page, you'll read a sentence describing a scene with a
-          <strong>bookshelf</strong>.
+          On the next pages, you'll read a sentence describing a real-world
+          scene.
         </p>
 
         <p class="jspsych-instructions">
           Your job is to share your best guess about <strong>how full</strong>
-          the bookshelf is, from completely empty to completely full.
+          some object is, possibly in an abstract sense.
         </p>
 
         <p class="jspsych-instructions">
@@ -91,17 +92,43 @@ export async function createTimeline() {
     },
 
     {
-      stimulus: PRACTICE_FULL_SENTENCE,
-      post_stimulus_prompt: PRACTICE_FULL_PROMPT,
-      data: { practice_sentence: "full" },
-      ...slider_trial_template
+      ...slider_trial_template,
+      stimulus: "The bookshelf is chock-full of books.",
+      post_stimulus_prompt: "How many books are on the bookshelf?",
+      data: { practice_sentence: { abstract: false, liquid: false, full: true } },
+      css_classes: ["jspsych-swarm-trial-practice"],
     },
 
     {
-      stimulus: PRACTICE_EMPTY_SENTENCE,
-      post_stimulus_prompt: PRACTICE_EMPTY_PROMPT,
-      data: { practice_sentence: "empty" },
-      ...slider_trial_template
+      ...slider_trial_template,
+      stimulus: "The pool is starting to overflow.",
+      post_stimulus_prompt: "How much water is in the pool?",
+      data: { practice_sentence: { abstract: false, liquid: true, full: true } },
+      css_classes: ["jspsych-swarm-trial-practice"],
+    },
+
+    {
+      ...slider_trial_template,
+      stimulus: "Everyone agreed that there was very little passion in the music.",
+      post_stimulus_prompt: "How much passion was in the music?",
+      data: { practice_sentence: { abstract: true, liquid: false, full: false } },
+      css_classes: ["jspsych-swarm-trial-practice"],
+    },
+
+    {
+      ...slider_trial_template,
+      stimulus: "The books are missing from the bookshelf.",
+      post_stimulus_prompt: "How many books are on the bookshelf?",
+      data: { practice_sentence: { abstract: false, liquid: false, full: false } },
+      css_classes: ["jspsych-swarm-trial-practice"],
+    },
+
+    {
+      ...slider_trial_template,
+      stimulus: "Everyone at the meeting felt anxiety about the future of the company.",
+      post_stimulus_prompt: "How much anxiety was at the meeting?",
+      data: { practice_sentence: { abstract: true, liquid: false, full: true } },
+      css_classes: ["jspsych-swarm-trial-practice"],
     },
 
     {
