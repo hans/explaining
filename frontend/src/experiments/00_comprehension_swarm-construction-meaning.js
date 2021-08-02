@@ -24,11 +24,9 @@ import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
 const MATERIALS_HASH = "swarm-002-promptP";
+const FILLERS_HASH = "fillers/swarm_comprehension-000-base";
 
-const PRACTICE_FULL_SENTENCE = "The bookshelf is chock-full of books.";
-const PRACTICE_FULL_PROMPT = "How many books are on the bookshelf?"
-const PRACTICE_EMPTY_SENTENCE = "The books are missing from the bookshelf.";
-const PRACTICE_EMPTY_PROMPT = "How many books are on the bookshelf?";
+const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
 
 const slider_trial_template = {
   type: "html-slider-response-with-copout",
@@ -40,7 +38,7 @@ const slider_trial_template = {
 
 
 export async function createTimeline() {
-  const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_HASH);
+  const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
   let timeline = [];
 
@@ -95,7 +93,7 @@ export async function createTimeline() {
       ...slider_trial_template,
       stimulus: "The bookshelf is chock-full of books.",
       post_stimulus_prompt: "How many books are on the bookshelf?",
-      data: { practice_sentence: { abstract: false, liquid: false, full: true } },
+      data: { condition_id: ["practice", "solid", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     },
 
@@ -103,7 +101,7 @@ export async function createTimeline() {
       ...slider_trial_template,
       stimulus: "The pool is starting to overflow.",
       post_stimulus_prompt: "How much water is in the pool?",
-      data: { practice_sentence: { abstract: false, liquid: true, full: true } },
+      data: { condition_id: ["practice", "liquid", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     },
 
@@ -111,7 +109,7 @@ export async function createTimeline() {
       ...slider_trial_template,
       stimulus: "Everyone agreed that there was very little passion in the music.",
       post_stimulus_prompt: "How much passion was in the music?",
-      data: { practice_sentence: { abstract: true, liquid: false, full: false } },
+      data: { condition_id: ["practice", "abstract", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     },
 
@@ -119,7 +117,7 @@ export async function createTimeline() {
       ...slider_trial_template,
       stimulus: "The books are missing from the bookshelf.",
       post_stimulus_prompt: "How many books are on the bookshelf?",
-      data: { practice_sentence: { abstract: false, liquid: false, full: false } },
+      data: { condition_id: ["practice", "solid", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     },
 
@@ -127,7 +125,7 @@ export async function createTimeline() {
       ...slider_trial_template,
       stimulus: "Everyone at the meeting felt anxiety about the future of the company.",
       post_stimulus_prompt: "How much anxiety was at the meeting?",
-      data: { practice_sentence: { abstract: true, liquid: false, full: true } },
+      data: { condition_id: ["practice", "abstract", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     },
 
@@ -146,10 +144,8 @@ export async function createTimeline() {
 
   // Prepare main experimental trials.
   timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
-    const stimulus = trial.sentence;
-
     return {
-      stimulus: stimulus,
+      stimulus: trial.sentence,
       post_stimulus_prompt: trial.prompt,
 
       data: {

@@ -14,7 +14,7 @@ df <- read_csv("responses.csv")
 glimpse(df)
 ```
 ```{r}
-filtered_df <- df %>% filter(!slider_copout)
+filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler")))
 ```
 
 

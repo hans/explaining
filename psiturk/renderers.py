@@ -156,8 +156,8 @@ class SwarmPilotRenderer(TrialRenderer):
 @register_trial_renderer("00_comprehension_swarm-construction-meaning")
 class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
-    # DEV
-    NUM_TRIALS = 20
+    TOTAL_NUM_TRIALS = 32
+    NUM_EXP_TRIALS = 20
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
@@ -178,8 +178,30 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id, args=None):
-        materials, = materials
+    def get_filler_trials(self, materials, num_trials: int):
+        empty_items = [item for item in materials["items"]
+                       if item["rating"] == "empty"]
+        full_items = [item for item in materials["items"]
+                      if item["rating"] == "full"]
+
+        # Sample an equal balance of "empty" and "full"
+        num_empty = num_trials // 2
+
+        bad_trials = random.sample(empty_items, num_empty)
+        good_trials = random.sample(full_items, num_trials - num_empty)
+        all_trials = bad_trials + good_trials
+
+        all_trials = [{
+            "item_id": trial["id"],
+            "condition_id": ["filler", trial["rating"]],
+
+            "sentence": trial["sentence"],
+            "prompt": trial["prompt"],
+        } for trial in all_trials]
+
+        return all_trials
+
+    def get_exp_trials(self, materials):
         items = self._filter_and_sample_materials(materials)
 
         # sample random subject settings for each item
@@ -194,6 +216,19 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
         trials = [self.build_trial(item, condition)
                   for item, condition in zip(items, trial_conditions)]
+        return trials
+
+    def get_trials(self, materials, materials_id, args=None):
+        exp_materials, filler_materials = materials
+
+        exp_trials = self.get_exp_trials(exp_materials)
+
+        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
+        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
+
+        trials = exp_trials + filler_trials
+        random.shuffle(trials)
+
         ret = dict(experiment=self.experiment_name, materials_id=materials_id,
                    trials=trials)
 
