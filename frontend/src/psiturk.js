@@ -9,9 +9,7 @@ export const psiturk = new PsiTurk(uniqueId, adServerLoc, mode);
 
 export async function default_on_finish() {
   psiturk.saveData({
-    // DEV
-    success: () => jsPsych.data.displayData(),
-    // success: () => psiturk.completeHIT(),
+    success: () => psiturk.completeHIT(),
     error: () => console.log("error saving data"),
   });
 }
