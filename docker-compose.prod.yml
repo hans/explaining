@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+    psiturk:
+        build:
+            args:
+                BUILD_PRODUCTION: 1
+        environment:
+            - PSITURK_AD_URL_DOMAIN=explaining.ad.syntaxgym.org

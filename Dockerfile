@@ -11,7 +11,11 @@ COPY frontend/. /frontend/
 
 # Build experiment
 ARG EXPERIMENT
-RUN cd /frontend && npm run build experiments/${EXPERIMENT}
+ARG BUILD_PRODUCTION
+RUN cd /frontend && \
+        [ -z "$BUILD_PRODUCTION" ] \
+                && npm run build-dev experiments/${EXPERIMENT} \
+                || npm run build experiments/${EXPERIMENT}
 
 # ------
 

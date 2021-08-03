@@ -5,7 +5,8 @@
   "scripts": {
     "jspsych": "jspsych -e experiment",
     "start": "npm run jspsych -- run",
-    "build": "npm run jspsych -- build --no-production",
+    "build": "npm run jspsych -- build",
+    "build-dev": "npm run jspsych -- build --no-production",
     "jatos": "npm run jspsych -- jatos"
   },
   "dependencies": {
