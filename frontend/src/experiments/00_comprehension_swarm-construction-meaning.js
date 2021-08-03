@@ -36,15 +36,16 @@ const slider_trial_template = {
   require_movement: true,
 };
 
+const COMPENSATION = "$2.00";
+
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
   let timeline = [];
 
-  // DEV skip demo stuff for time
-  // timeline.push(trials.age_block);
-  // timeline.push(trials.demo_block);
+  timeline.push(trials.age_block);
+  timeline.push(trials.demo_block);
 
   timeline = timeline.concat([
     {
@@ -160,7 +161,7 @@ export async function createTimeline() {
     }
   }));
 
-  timeline.push(trials.comments_block);
+  timeline.push(trials.make_comments_block(COMPENSATION));
 
   return timeline;
 }

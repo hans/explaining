@@ -21,7 +21,6 @@ RUN pip install names
 
 COPY materials /materials
 COPY psiturk /psiturk
-RUN rm -f /psiturk/.psiturkconfig
 
 # copy in frontend webpack script
 ARG EXPERIMENT

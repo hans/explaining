@@ -23,6 +23,8 @@ import { default_on_finish, default_on_data_update } from "../psiturk";
 const EXPERIMENT_NAME = "01_production_swarm-topicality";
 const MATERIALS_HASH = "swarm-002-promptP";
 
+const COMPENSATION = "TODO";
+
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_HASH);
@@ -130,7 +132,7 @@ export async function createTimeline() {
     }
   }));
 
-  timeline.push(trials.comments_block);
+  timeline.push(trials.make_comments_block(COMPENSATION));
 
   return timeline;
 }

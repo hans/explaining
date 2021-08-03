@@ -22,6 +22,8 @@ const FILLERS_HASH = "fillers/swarm_acceptability-000-base";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
 
+const COMPENSATION = "TODO";
+
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
@@ -50,7 +52,8 @@ export async function createTimeline() {
     }
   }));
 
-  const comments_block = trials.add_data_fields(trials.comments_block,
+  let comments_block = trials.make_comments_block(COMPENSATION);
+  comments_block = trials.add_data_fields(comments_block,
     {experiment_id: EXPERIMENT_NAME})
   timeline.push(comments_block);
 

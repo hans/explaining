@@ -40,14 +40,15 @@ export function add_data_fields(trial_object, data_fields) {
    ]
  };
 
-const COMPENSATION = "TODO";
-export const comments_block = {
-  type: "survey-text",
-  // TODO
-  preamble: "<p>Thanks for participating in our study. You will be compensated " + COMPENSATION + " in total.</p><p><strong>Click \"Finish\" to complete the experiment and receive compensation.</strong> If you have any comments, please let us know in the form below.</p>",
-  questions: [{prompt: "Do you have any comments to share with us?"}],
-  button_label: "Finish",
-};
+
+export function make_comments_block(compensation) {
+  return {
+    type: "survey-text",
+    preamble: "<p>Thanks for participating in our study. You will be compensated " + compensation + " in total.</p><p><strong>Click \"Finish\" to complete the experiment and receive compensation.</strong> If you have any comments, please let us know in the form below.</p>",
+    questions: [{prompt: "Do you have any comments to share with us?"}],
+    button_label: "Finish",
+  };
+}
 
 
 export const acceptability_block = {
