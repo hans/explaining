@@ -9,12 +9,12 @@
 # Title that will be used for the HIT when posted to mturk
 # e.g.,
 #     title = Stroop task
-title = TODO
+title = English sentence understanding task
 
 # Description that will be used for the HIT when posted to mturk
 # e.g.,
 #     description = Judge the color of a series of words.
-description = TODO
+description = Help us understand the meanings of English words and sentences.
 
 # Keywords for the HIT on mturk
 # e.g.,
