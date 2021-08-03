@@ -9,7 +9,7 @@
 # Title that will be used for the HIT when posted to mturk
 # e.g.,
 #     title = Stroop task
-title = English sentence understanding task
+title = English sentence understanding task (Explaining 00-00)
 
 # Description that will be used for the HIT when posted to mturk
 # e.g.,
