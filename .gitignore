@@ -2,6 +2,10 @@
 .jupyter
 .ipython
 .local
+.cache
+.config
 __pycache__
 data
 materials
+
+prod.env

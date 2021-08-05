@@ -40,8 +40,6 @@ def register_trial_renderer(experiment_name):
 
 class SwarmPilotRenderer(TrialRenderer):
 
-    NUM_TRIALS = 20
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -81,10 +79,10 @@ class SwarmPilotRenderer(TrialRenderer):
         # drop materials with missing fields
         critical_fields = ["A", "L", "V", "P", "prompt P", "L det",
                            "topic A", "topic L", "conj"]
-        items = [item for item in materials["items"]
+        items = [item for item in items
                  if not any(not item[field] for field in critical_fields)]
 
-        items = random.sample(items, self.NUM_TRIALS)
+        items = random.sample(items, self.NUM_EXP_TRIALS)
 
         return items
 
@@ -156,8 +154,8 @@ class SwarmPilotRenderer(TrialRenderer):
 @register_trial_renderer("00_comprehension_swarm-construction-meaning")
 class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
-    TOTAL_NUM_TRIALS = 32
-    NUM_EXP_TRIALS = 20
+    TOTAL_NUM_TRIALS = 30
+    NUM_EXP_TRIALS = 18
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
@@ -212,7 +210,7 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
             (0, 1),  # topic = a, subject = l
         ]
 
-        trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
 
         trials = [self.build_trial(item, condition)
                   for item, condition in zip(items, trial_conditions)]
