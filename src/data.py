@@ -36,7 +36,7 @@ def c():
     return c.cur
 
 def load_raw_results():
-    return pd.DataFrame(c().execute(f"SELECT * FROM {PSITURK_DATA_TABLE}")).set_index("uniqueid")
+    return pd.DataFrame(c().execute(f"SELECT * FROM {PSITURK_DATA_TABLE} WHERE mode = 'live'")).set_index("uniqueid")
 
 def get_trials_df(raw_results, extract_data_fields=()):
     """
@@ -59,6 +59,7 @@ def get_trials_df(raw_results, extract_data_fields=()):
             info = copy(base_info)
             # Extract generally useful trial-specific data
             info.update({c: tdata[c] for c in ["trial_type", "trial_index", "rt", "internal_node_id"]})
+            info.update({c: trial[c] for c in ["dateTime"]})
             # Extract user-specified trial data
             info.update({c: tdata.get(c, None) for c in extract_data_fields})
             
