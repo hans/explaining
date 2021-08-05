@@ -2,7 +2,7 @@
  * Tests whether construction choice has an effect on inferred meaning for
  * *swarm*-construction.
  *
- * @title English sentence understanding task (Explaining 00-01)
+ * @title 5-10min English sentence understanding task (Explaining 00-01)
  * @description Help us understand the meanings of English words and sentences.
  * @version
  */
