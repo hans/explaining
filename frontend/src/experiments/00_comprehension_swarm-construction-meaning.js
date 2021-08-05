@@ -36,7 +36,7 @@ const slider_trial_template = {
   require_movement: true,
 };
 
-const COMPENSATION = "$2.00";
+const COMPENSATION = "$1.00";
 
 
 export async function createTimeline() {
