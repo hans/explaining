@@ -2,7 +2,7 @@
  * Tests whether construction choice has an effect on inferred meaning for
  * *swarm*-construction.
  *
- * @title English sentence understanding task (Explaining 00-00)
+ * @title English sentence understanding task (Explaining 00-01)
  * @description Help us understand the meanings of English words and sentences.
  * @version
  */
@@ -23,7 +23,7 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "00_comprehension_swarm-construction-meaning";
-const MATERIALS_HASH = "swarm-002-promptP";
+const MATERIALS_HASH = "swarm-003-drops";
 const FILLERS_HASH = "fillers/swarm_comprehension-000-base";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
