@@ -204,10 +204,10 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
         # sample random subject settings for each item
         # topic manipulation is not relevant here -- we'll just set to
-        # zero = agent. Not actually used by our `build_trial`.
+        # zero = location. Not actually used by our `build_trial`.
         condition_choices = [
-            (0, 0),  # topic = a, subject = a
-            (0, 1),  # topic = a, subject = l
+            (0, 0),  # topic = l, subject = l
+            (0, 1),  # topic = l, subject = a
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
@@ -261,8 +261,8 @@ class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
         # sample random topic settings for each item. both subject options
         # presented to exp subject
         condition_choices = [
-            (0, 0),  # topic = a, subject = a
-            (1, 0),  # topic = b, subject = a
+            (0, 1),  # topic = a, subject = a
+            (1, 1),  # topic = b, subject = a
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)
