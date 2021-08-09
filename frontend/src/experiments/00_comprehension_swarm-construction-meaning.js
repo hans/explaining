@@ -38,14 +38,17 @@ const slider_trial_template = {
 
 const COMPENSATION = "$1.00";
 
+// Helper function to add experiment ID to block spec
+const a = (block) => trials.add_data_fields(block, { experiment_id: EXPERIMENT_NAME });
+
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
   let timeline = [];
 
-  timeline.push(trials.age_block);
-  timeline.push(trials.demo_block);
+  timeline.push(a(trials.age_block));
+  timeline.push(a(trials.demo_block));
 
   timeline = timeline.concat([
     {
@@ -90,45 +93,45 @@ export async function createTimeline() {
       ],
     },
 
-    {
+    a({
       ...slider_trial_template,
       stimulus: "The bookshelf is chock-full of books.",
       post_stimulus_prompt: "How many books are on the bookshelf?",
       data: { condition_id: ["practice", "solid", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
-    },
+    }),
 
-    {
+    a({
       ...slider_trial_template,
       stimulus: "The pool is starting to overflow.",
       post_stimulus_prompt: "How much water is in the pool?",
       data: { condition_id: ["practice", "liquid", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
-    },
+    }),
 
-    {
+    a({
       ...slider_trial_template,
       stimulus: "Everyone agreed that there was very little passion in the music.",
       post_stimulus_prompt: "How much passion was in the music?",
       data: { condition_id: ["practice", "abstract", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
-    },
+    }),
 
-    {
+    a({
       ...slider_trial_template,
       stimulus: "The books are missing from the bookshelf.",
       post_stimulus_prompt: "How many books are on the bookshelf?",
       data: { condition_id: ["practice", "solid", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
-    },
+    }),
 
-    {
+    a({
       ...slider_trial_template,
       stimulus: "Everyone at the meeting felt anxiety about the future of the company.",
       post_stimulus_prompt: "How much anxiety was at the meeting?",
       data: { condition_id: ["practice", "abstract", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
-    },
+    }),
 
     {
       type: "instructions",
@@ -161,7 +164,7 @@ export async function createTimeline() {
     }
   }));
 
-  timeline.push(trials.make_comments_block(COMPENSATION));
+  timeline.push(a(trials.make_comments_block(COMPENSATION)));
 
   return timeline;
 }
