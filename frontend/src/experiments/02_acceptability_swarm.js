@@ -24,14 +24,16 @@ const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
 
 const COMPENSATION = "1.00";
 
+// Helper function to add experiment ID to block spec
+const a = (block) => trials.add_data_fields(block, { experiment_id: EXPERIMENT_NAME });
+
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
-  let timeline = [trials.age_block, trials.demo_block];
+  let timeline = [a(trials.age_block), a(trials.demo_block)];
 
   const acceptability_intro_sequence =
-    trials.acceptability_intro_sequence.map((t) =>
-      trials.add_data_fields(t, {experiment_id: EXPERIMENT_NAME}))
+    trials.acceptability_intro_sequence.map(a);
   timeline = timeline.concat(acceptability_intro_sequence);
 
   // Prepare main experimental trials.
@@ -50,10 +52,7 @@ export async function createTimeline() {
     }
   }));
 
-  let comments_block = trials.make_comments_block(COMPENSATION);
-  comments_block = trials.add_data_fields(comments_block,
-    {experiment_id: EXPERIMENT_NAME})
-  timeline.push(comments_block);
+  timeline.push(a(trials.make_comments_block(COMPENSATION)));
 
   return timeline;
 }
