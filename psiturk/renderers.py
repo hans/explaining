@@ -302,9 +302,8 @@ class AcceptabilityFillerMixin(object):
 @register_trial_renderer("02_acceptability_swarm")
 class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
 
-    # DEV
-    TOTAL_NUM_TRIALS = 40
-    NUM_EXP_TRIALS = 20
+    TOTAL_NUM_TRIALS = 38
+    NUM_EXP_TRIALS = 18
 
     def build_trial(self, item, condition):
         trial = super().build_trial(item, condition)
@@ -326,7 +325,7 @@ class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
             (0, 1),  # topic = b, subject = a
         ]
 
-        trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
 
         trials = [self.build_trial(item, condition)
                   for item, condition in zip(items, trial_conditions)]
