@@ -2,7 +2,7 @@
  * Used to source acceptability for each side of swarm-with alternation,
  * in order to norm data.
  *
- * @title 02_acceptability_swarm
+ * @title 5-10min English sentence rating task (Explaining 02-00)
  * @description
  * @version
  */
@@ -17,19 +17,17 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "02_acceptability_swarm";
-const MATERIALS_HASH = "swarm-002-promptP";
+const MATERIALS_HASH = "swarm-003-drops";
 const FILLERS_HASH = "fillers/swarm_acceptability-000-base";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
 
-const COMPENSATION = "TODO";
+const COMPENSATION = "1.00";
 
 export async function createTimeline() {
   const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
-  // DEV: skip demographic stuff
-  let timeline = [];
-  // let timeline = [trials.age_block, trials.demo_block];
+  let timeline = [trials.age_block, trials.demo_block];
 
   const acceptability_intro_sequence =
     trials.acceptability_intro_sequence.map((t) =>
