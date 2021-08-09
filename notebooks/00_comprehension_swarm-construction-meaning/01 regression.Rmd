@@ -10,7 +10,11 @@ library(lmerTest)
 ```
 
 ```{r}
-df <- read_csv("responses.csv")
+df <- read_csv(
+  "merged_df.csv",
+  col_types = list(
+    uniqueid = col_factor()
+  ))
 glimpse(df)
 ```
 ```{r}
@@ -19,7 +23,7 @@ filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "f
 
 
 ```{r}
-model <- lmer(slider_value_normed ~ agent_is_subject + (1|item_id) + (1|uniqueid),
+model <- lmer(slider_value ~ agent_is_subject + (1|item_id) + (agent_is_subject|uniqueid),
               data=filtered_df)
 summary(model)
 ```
