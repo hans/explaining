@@ -321,7 +321,7 @@ class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
 
         # sample random subject settings. topic clause not used in this exp
         condition_choices = [
-            (0, 1),  # topic = a, subject = a
+            (0, 0),  # topic = a, subject = l
             (0, 1),  # topic = b, subject = a
         ]
 
