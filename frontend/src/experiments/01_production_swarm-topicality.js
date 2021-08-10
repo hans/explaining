@@ -2,8 +2,8 @@
  * Tests whether topicality manipulation has an effect on production preference
  * for the *swarm*-construction.
  *
- * @title 01_production_swarm-topicality
- * @description
+ * @title 5-10min English writing task (Explaining 01-00)
+ * @description Help us pick out natural English sentences.
  * @version
  */
 
@@ -21,17 +21,21 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "01_production_swarm-topicality";
-const MATERIALS_HASH = "swarm-002-promptP";
+const MATERIALS_HASH = "swarm-003-drops";
+const FILLERS_HASH = "fillers/swarm_production-000-base";
 
-const COMPENSATION = "TODO";
+const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
+
+const COMPENSATION = "$1.00";
+
+// Helper function to add experiment ID to block spec
+const a = (block) => trials.add_data_fields(block, { experiment_id: EXPERIMENT_NAME });
 
 
 export async function createTimeline() {
-  const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_HASH);
+  const trial_materials = await get_trials(EXPERIMENT_NAME, MATERIALS_SEQ);
 
-  // DEV: skip demographic stuff
-  let timeline = [];
-  // let timeline = [trials.age_block, trials.demo_block];
+  let timeline = [a(trials.age_block), a(trials.demo_block)];
 
   timeline = timeline.concat([
     {
@@ -62,7 +66,7 @@ export async function createTimeline() {
       ]
     },
 
-    {
+    a({
       type: "survey-multi-choice-ext",
       required: true,
 
@@ -86,7 +90,7 @@ export async function createTimeline() {
       ],
 
       data: { practice_sentence: true },
-    },
+    }),
 
     {
       type: "instructions",
@@ -104,7 +108,7 @@ export async function createTimeline() {
   // Prepare main experimental trials.
   timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
     // Randomly order sentence options.
-    const options = _.shuffle(["agent", "location"]);
+    const options = _.shuffle(_.keys(trial.sentences));
     const sentences = options.map(o => ({value: o, label: trial.sentences[o]}));
 
     return {
@@ -115,8 +119,8 @@ export async function createTimeline() {
         {
           prompt:
             "The following two sentences differ in the way they are " +
-            "completed after the <em>but</em>. Which sentence sounds more " +
-            "natural to you?",
+            `completed after the <em>${trial.conjunction}</em>. Which ` +
+            "sentence sounds more natural to you?",
           options: sentences,
         },
       ],

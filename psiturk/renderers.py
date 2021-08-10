@@ -97,7 +97,7 @@ class SwarmPilotRenderer(TrialRenderer):
 
         return field
 
-    def build_trial(self, item, condition):
+    def build_trial(self, item, condition, materials_id):
         self._reset_var_cache()
 
         # prepare function for quickly processing item data
@@ -106,6 +106,7 @@ class SwarmPilotRenderer(TrialRenderer):
         agent_is_topic, agent_is_subject = condition
 
         trial = {
+            "materials_id": materials_id,
             "item_id": item["id"],
             "condition_id": condition,
 
@@ -157,8 +158,8 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
     TOTAL_NUM_TRIALS = 30
     NUM_EXP_TRIALS = 18
 
-    def build_trial(self, item, condition):
-        trial = super().build_trial(item, condition)
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
 
         _, agent_is_subject = condition
         clause = trial["critical_clause"]["agent" if agent_is_subject
@@ -212,7 +213,7 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
 
-        trials = [self.build_trial(item, condition)
+        trials = [self.build_trial(item, condition, materials["name"])
                   for item, condition in zip(items, trial_conditions)]
         return trials
 
@@ -236,11 +237,11 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 @register_trial_renderer("01_production_swarm-topicality")
 class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
 
-    # DEV
-    NUM_TRIALS = 20
+    TOTAL_NUM_TRIALS = 30
+    NUM_EXP_TRIALS = 18
 
-    def build_trial(self, item, condition):
-        trial = super().build_trial(item, condition)
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
 
         agent_is_topic, _ = condition
         topic_setup = trial["topic_clause"]["agent" if agent_is_topic
@@ -254,21 +255,57 @@ class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id, args=None):
-        materials, = materials
+    def get_filler_trials(self, materials, num_trials: int):
+        trials = random.sample(materials["items"], num_trials)
+
+        def build_trial(t):
+            good_sentence = "".join(
+                [t["prefix"], ", ", t["conj"], " ", t["good_completion"]])
+            bad_sentence = "".join(
+                [t["prefix"], ", ", t["conj"], " ", t["bad_completion"]])
+
+            return {
+                "materials_id": materials["name"],
+                "item_id": t["id"],
+                "condition_id": ["filler", t["manipulation"]],
+
+                "sentences": {
+                    "good": good_sentence,
+                    "bad": bad_sentence,
+                },
+                "conjunction": t["conj"],
+            }
+        trials = [build_trial(t) for t in trials]
+
+        return trials
+
+    def get_exp_trials(self, materials):
         items = self._filter_and_sample_materials(materials)
 
         # sample random topic settings for each item. both subject options
         # presented to exp subject
         condition_choices = [
-            (0, 1),  # topic = a, subject = a
-            (1, 1),  # topic = b, subject = a
+            (0, 1),  # topic = l, subject = a
+            (1, 1),  # topic = a, subject = a
         ]
 
-        trial_conditions = random.choices(condition_choices, k=self.NUM_TRIALS)
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
 
-        trials = [self.build_trial(item, condition)
+        trials = [self.build_trial(item, condition, materials["name"])
                   for item, condition in zip(items, trial_conditions)]
+        return trials
+
+    def get_trials(self, materials, materials_id, args=None):
+        exp_materials, filler_materials = materials
+
+        exp_trials = self.get_exp_trials(exp_materials)
+
+        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
+        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
+
+        trials = exp_trials + filler_trials
+        random.shuffle(trials)
+
         ret = dict(experiment=self.experiment_name, materials_id=materials_id,
                    trials=trials)
 
@@ -305,8 +342,8 @@ class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
     TOTAL_NUM_TRIALS = 38
     NUM_EXP_TRIALS = 18
 
-    def build_trial(self, item, condition):
-        trial = super().build_trial(item, condition)
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
 
         _, agent_is_subject = condition
 
@@ -327,7 +364,7 @@ class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
 
-        trials = [self.build_trial(item, condition)
+        trials = [self.build_trial(item, condition, materials["name"])
                   for item, condition in zip(items, trial_conditions)]
         return trials
 
