@@ -122,8 +122,27 @@ class SwarmPilotRenderer(TrialRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id, args=None):
+    def get_filler_trials(self, materials, num_trials: int):
         raise NotImplementedError()
+
+    def get_exp_trials(self, materials):
+        raise NotImplementedError()
+
+    def get_trials(self, materials, materials_id, args=None):
+        exp_materials, filler_materials = materials
+
+        exp_trials = self.get_exp_trials(exp_materials)
+
+        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
+        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
+
+        trials = exp_trials + filler_trials
+        random.shuffle(trials)
+
+        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
+                   trials=trials)
+
+        return ret
 
 
 class SwarmNPPilotRenderer(SwarmPilotRenderer):
@@ -160,6 +179,51 @@ class SwarmNPPilotRenderer(SwarmPilotRenderer):
                 "are" if trial["location_plural"] else "is", " ",
                 trial["verb"], "ing with ",
                 trial["agent"],
+            ]),
+        }
+
+        return trial
+
+
+class SwarmAnaphorPilotRenderer(SwarmPilotRenderer):
+    """
+    renderer establishing setup with clear discourse referent, and critical
+    clause uses swarm-alternation with pronoun for established referent
+    """
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        # prepare function for quickly processing item data
+        p = functools.partial(self.process_field, item)
+
+        agent_is_given, _ = condition
+
+        # clause setup which makes agent / location topical
+        trial["setup_clause"] = {
+            "agent": p("given A"),
+            "location": p("given L"),
+        }
+
+        trial["critical_clause"] = {
+            "agent": "".join([
+                trial["given A pron subj"]
+                    if agent_is_given else trial["agent"], " ",
+                "are" if trial["agent_plural"] else "is", " ",
+                trial["verb"], "ing ",
+                trial["preposition"], " ",
+                "".join(trial["location_determiner"], " ",
+                        trial["location"])
+                    if agent_is_given else trial["given L pron obj"],
+            ]),
+
+            "location": "".join([
+                "".join(trial["location_determiner"], " ",
+                        trial["location"])
+                    if agent_is_given else trial["given L pron subj"], " ",
+                "are" if trial["location_plural"] else "is", " ",
+                trial["verb"], "ing with ",
+                trial["given A pron obj"] if agent_is_given else trial["agent"],
             ]),
         }
 
@@ -231,22 +295,6 @@ class ComprehensionSwarmMeaningRenderer(SwarmNPPilotRenderer):
                   for item, condition in zip(items, trial_conditions)]
         return trials
 
-    def get_trials(self, materials, materials_id, args=None):
-        exp_materials, filler_materials = materials
-
-        exp_trials = self.get_exp_trials(exp_materials)
-
-        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
-        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
-
-        trials = exp_trials + filler_trials
-        random.shuffle(trials)
-
-        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
-                   trials=trials)
-
-        return ret
-
 
 @register_trial_renderer("01_production_swarm-topicality")
 class ProductionSwarmTopicalityRenderer(SwarmNPPilotRenderer):
@@ -309,22 +357,6 @@ class ProductionSwarmTopicalityRenderer(SwarmNPPilotRenderer):
                   for item, condition in zip(items, trial_conditions)]
         return trials
 
-    def get_trials(self, materials, materials_id, args=None):
-        exp_materials, filler_materials = materials
-
-        exp_trials = self.get_exp_trials(exp_materials)
-
-        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
-        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
-
-        trials = exp_trials + filler_trials
-        random.shuffle(trials)
-
-        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
-                   trials=trials)
-
-        return ret
-
 
 class AcceptabilityFillerMixin(object):
 
@@ -382,18 +414,68 @@ class AcceptabilitySwarmRenderer(SwarmNPPilotRenderer, AcceptabilityFillerMixin)
                   for item, condition in zip(items, trial_conditions)]
         return trials
 
-    def get_trials(self, materials, materials_id, args=None):
-        exp_materials, filler_materials = materials
 
-        exp_trials = self.get_exp_trials(exp_materials)
+@register_trial_renderer("03_production_swarm-givenness")
+class ProductionSwarmGivennessRenderer(SwarmAnaphorPilotRenderer):
 
-        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
-        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
+    TOTAL_NUM_TRIALS = 30
+    NUM_EXP_TRIALS = 18
 
-        trials = exp_trials + filler_trials
-        random.shuffle(trials)
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
 
-        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
-                   trials=trials)
+        agent_is_given, _ = condition
+        setup = trial["setup_clause"]["agent" if agent_is_given
+                                      else "location"]
+        trial["sentences"] = {
+            "agent":
+                "".join([setup, ". ",
+                         trial["critical_clause"]["agent"].capitalize(),
+                         "."]),
+            "location":
+                "".join([setup, ". ",
+                         trial["critical_clause"]["location"].capitalize(),
+                         "."]),
+        }
 
-        return ret
+        return trial
+
+    def get_filler_trials(self, materials, num_trials: int):
+        trials = random.sample(materials["items"], num_trials)
+
+        def build_trial(t):
+            good_sentence = "".join(
+                [t["prefix"], ", ", t["conj"], " ", t["good_completion"]])
+            bad_sentence = "".join(
+                [t["prefix"], ", ", t["conj"], " ", t["bad_completion"]])
+
+            return {
+                "materials_id": materials["name"],
+                "item_id": t["id"],
+                "condition_id": ["filler", t["manipulation"]],
+
+                "sentences": {
+                    "good": good_sentence,
+                    "bad": bad_sentence,
+                },
+                "conjunction": t["conj"],
+            }
+        trials = [build_trial(t) for t in trials]
+
+        return trials
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # sample random topic settings for each item. both subject options
+        # presented to exp subject
+        condition_choices = [
+            (0, 1),  # given = l, subject = a
+            (1, 1),  # given = a, subject = a
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
