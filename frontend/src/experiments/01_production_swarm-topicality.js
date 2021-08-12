@@ -136,7 +136,7 @@ export async function createTimeline() {
     }
   }));
 
-  timeline.push(trials.make_comments_block(COMPENSATION));
+  timeline.push(a(trials.make_comments_block(COMPENSATION)));
 
   return timeline;
 }
