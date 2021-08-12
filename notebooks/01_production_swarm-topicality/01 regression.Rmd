@@ -1,0 +1,49 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+```{r}
+df <- read_csv(
+  "merged_df.csv",
+  col_types = list(
+    uniqueid = col_factor(),
+    survey_answer = col_factor()
+  ))
+glimpse(df)
+```
+```{r}
+filtered_df <- df %>% 
+  filter(!(condition_0 %in% c("filler"))) %>% 
+  mutate(agent_is_subject=survey_answer == "agent")
+```
+
+
+```{r}
+# maximal random effects structure (stepped back from this because of singular fits):
+# agent_is_subject ~ agent_is_topic * `A concrete?` + (agent_is_topic|item_id) + (agent_is_topic + `A concrete?`|uniqueid)
+model <- glmer(agent_is_subject ~ agent_is_topic * `A concrete?` + (1|item_id) + (1|uniqueid),
+               family="binomial",control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
+               data=filtered_df)
+summary(model)
+```
+```{r}
+ranef(model)
+```
+
+```{r}
+cbind(item_id=rownames(ranef(model)$item_id), ranef(model)$item_id) %>% 
+  mutate(item_id=as.double(item_id), intercept=`(Intercept)`) %>% 
+  left_join(filtered_df %>% select(item_id, `A concrete?`) %>% unique()) %>% 
+  
+  ggplot(aes(x=`A concrete?`, y=intercept)) +
+    geom_boxplot()
+```
+
+
