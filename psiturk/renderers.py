@@ -103,8 +103,6 @@ class SwarmPilotRenderer(TrialRenderer):
         # prepare function for quickly processing item data
         p = functools.partial(self.process_field, item)
 
-        agent_is_topic, agent_is_subject = condition
-
         trial = {
             "materials_id": materials_id,
             "item_id": item["id"],
@@ -122,6 +120,25 @@ class SwarmPilotRenderer(TrialRenderer):
             "conjunction": item["conj"],
         }
 
+        return trial
+
+    def get_trials(self, materials, materials_id, args=None):
+        raise NotImplementedError()
+
+
+class SwarmNPPilotRenderer(SwarmPilotRenderer):
+    """
+    renderer establishing setup with topicality, and critical clause
+    uses swarm-alternation with actual NPs (as opposed to pronouns)
+    """
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        # prepare function for quickly processing item data
+        p = functools.partial(self.process_field, item)
+
+        # clause setup which makes agent / location topical
         trial["topic_clause"] = {
             "agent": p("topic A"),
             "location": p("topic L"),
@@ -148,12 +165,9 @@ class SwarmPilotRenderer(TrialRenderer):
 
         return trial
 
-    def get_trials(self, materials, materials_id, args=None):
-        raise NotImplementedError()
-
 
 @register_trial_renderer("00_comprehension_swarm-construction-meaning")
-class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
+class ComprehensionSwarmMeaningRenderer(SwarmNPPilotRenderer):
 
     TOTAL_NUM_TRIALS = 30
     NUM_EXP_TRIALS = 18
@@ -235,7 +249,7 @@ class ComprehensionSwarmMeaningRenderer(SwarmPilotRenderer):
 
 
 @register_trial_renderer("01_production_swarm-topicality")
-class ProductionSwarmTopicalityRenderer(SwarmPilotRenderer):
+class ProductionSwarmTopicalityRenderer(SwarmNPPilotRenderer):
 
     TOTAL_NUM_TRIALS = 30
     NUM_EXP_TRIALS = 18
@@ -337,7 +351,7 @@ class AcceptabilityFillerMixin(object):
 
 
 @register_trial_renderer("02_acceptability_swarm")
-class AcceptabilitySwarmRenderer(SwarmPilotRenderer, AcceptabilityFillerMixin):
+class AcceptabilitySwarmRenderer(SwarmNPPilotRenderer, AcceptabilityFillerMixin):
 
     TOTAL_NUM_TRIALS = 38
     NUM_EXP_TRIALS = 18
