@@ -72,7 +72,7 @@ class SwarmPilotRenderer(TrialRenderer):
 
         return self._replace_name(name_id, subtype=subtype)
 
-    def _filter_and_sample_materials(self, materials):
+    def _filter_materials(self, materials):
         # drop any materials marked for exclusion
         items = [item for item in materials["items"] if not item["exclude"]]
 
@@ -81,7 +81,10 @@ class SwarmPilotRenderer(TrialRenderer):
                            "topic A", "topic L", "conj"]
         items = [item for item in items
                  if not any(not item[field] for field in critical_fields)]
+        return items
 
+    def _filter_and_sample_materials(self, materials):
+        items = self._filter_materials(materials)
         items = random.sample(items, self.NUM_EXP_TRIALS)
 
         return items
@@ -118,6 +121,11 @@ class SwarmPilotRenderer(TrialRenderer):
             "preposition": item["P"],
             "prompt_preposition": item["prompt P"],
             "conjunction": item["conj"],
+
+            "agent_pronoun_subject": item["given A pron subj"],
+            "agent_pronoun_object": item["given A pron obj"],
+            "location_pronoun_subject": item["given L pron subj"],
+            "location_pronoun_object": item["given L pron obj"],
         }
 
         return trial
@@ -191,6 +199,19 @@ class SwarmAnaphorPilotRenderer(SwarmPilotRenderer):
     clause uses swarm-alternation with pronoun for established referent
     """
 
+    def _filter_materials(self, materials):
+        # drop any materials marked for exclusion
+        items = [item for item in materials["items"] if not item["exclude"]]
+
+        # drop materials with missing fields
+        critical_fields = ["A", "L", "V", "P", "prompt P", "L det",
+                           "given A", "given L", "given A pron subj",
+                           "given A pron obj", "given L pron subj",
+                           "given L pron obj"]
+        items = [item for item in items
+                 if not any(not item[field] for field in critical_fields)]
+        return items
+
     def build_trial(self, item, condition, materials_id):
         trial = super().build_trial(item, condition, materials_id)
 
@@ -207,23 +228,25 @@ class SwarmAnaphorPilotRenderer(SwarmPilotRenderer):
 
         trial["critical_clause"] = {
             "agent": "".join([
-                trial["given A pron subj"]
+                trial["agent_pronoun_subject"]
                     if agent_is_given else trial["agent"], " ",
                 "are" if trial["agent_plural"] else "is", " ",
                 trial["verb"], "ing ",
                 trial["preposition"], " ",
-                "".join(trial["location_determiner"], " ",
-                        trial["location"])
-                    if agent_is_given else trial["given L pron obj"],
+                "".join([trial["location_determiner"], " ",
+                         trial["location"]])
+                    if agent_is_given else trial["location_pronoun_object"],
             ]),
 
             "location": "".join([
-                "".join(trial["location_determiner"], " ",
-                        trial["location"])
-                    if agent_is_given else trial["given L pron subj"], " ",
+                "".join([trial["location_determiner"], " ",
+                         trial["location"]])
+                    if agent_is_given else trial["location_pronoun_subject"],
+                " ",
                 "are" if trial["location_plural"] else "is", " ",
                 trial["verb"], "ing with ",
-                trial["given A pron obj"] if agent_is_given else trial["agent"],
+                trial["agent_pronoun_object"]
+                    if agent_is_given else trial["agent"],
             ]),
         }
 
@@ -430,12 +453,10 @@ class ProductionSwarmGivennessRenderer(SwarmAnaphorPilotRenderer):
         trial["sentences"] = {
             "agent":
                 "".join([setup, ". ",
-                         trial["critical_clause"]["agent"].capitalize(),
-                         "."]),
+                         trial["critical_clause"]["agent"], "."]),
             "location":
                 "".join([setup, ". ",
-                         trial["critical_clause"]["location"].capitalize(),
-                         "."]),
+                         trial["critical_clause"]["location"], "."]),
         }
 
         return trial
@@ -445,9 +466,11 @@ class ProductionSwarmGivennessRenderer(SwarmAnaphorPilotRenderer):
 
         def build_trial(t):
             good_sentence = "".join(
-                [t["prefix"], ", ", t["conj"], " ", t["good_completion"]])
+                [t["prefix"], ". ",
+                 t["good_completion"].capitalize()])
             bad_sentence = "".join(
-                [t["prefix"], ", ", t["conj"], " ", t["bad_completion"]])
+                [t["prefix"], ". ",
+                 t["bad_completion"].capitalize()])
 
             return {
                 "materials_id": materials["name"],
@@ -458,7 +481,6 @@ class ProductionSwarmGivennessRenderer(SwarmAnaphorPilotRenderer):
                     "good": good_sentence,
                     "bad": bad_sentence,
                 },
-                "conjunction": t["conj"],
             }
         trials = [build_trial(t) for t in trials]
 
