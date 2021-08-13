@@ -20,7 +20,8 @@ df <- read_csv(
   "merged_df.csv",
   col_types = list(
     uniqueid = col_factor(),
-    survey_answer = col_factor()
+    survey_answer = col_factor(),
+    `given position` = col_factor()
   ))
 glimpse(df)
 ```
@@ -33,8 +34,8 @@ filtered_df <- df %>%
 
 ```{r}
 # maximal random effects structure (stepped back from this because of singular fits):
-# agent_is_subject ~ agent_is_topic * `A concrete?` + (agent_is_topic|item_id) + (agent_is_topic + `A concrete?`|uniqueid)
-model <- glmer(agent_is_subject ~ agent_is_topic * `A concrete?` + (1|item_id) + (`A concrete?`|uniqueid),
+# agent_is_subject ~ agent_is_given * `A concrete?` + (agent_is_given|item_id) + (agent_is_given * `A concrete?`|uniqueid)
+model <- glmer(agent_is_subject ~ agent_is_given * `A concrete?` + (1|item_id) + (agent_is_given + `A concrete?`|uniqueid),
                family="binomial",control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
                data=filtered_df)
 summary(model)
