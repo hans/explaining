@@ -5,7 +5,7 @@ output: html_notebook
 
 ```{r}
 # deps relative to rocker/verse image
-install.packages(c("Rcpp", "tidyverse", "lme4", "lmerTest"))
+install.packages(c("Rcpp", "lme4", "lmerTest"))
 ```
 
 
