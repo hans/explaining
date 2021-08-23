@@ -1,8 +1,8 @@
 /**
- * Tests whether construction choice has an effect on inferred meaning for
- * *swarm*-construction.
+ * Tests interaction between construction choice and givenness in fullness
+ * inference.
  *
- * @title 5-10min English sentence understanding task (Explaining 00-01)
+ * @title 5-10min English sentence understanding task (Explaining 04-00)
  * @description Help us understand the meanings of English words and sentences.
  * @version
  */
