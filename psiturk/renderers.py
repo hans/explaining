@@ -501,3 +501,75 @@ class ProductionSwarmGivennessRenderer(SwarmAnaphorPilotRenderer):
         trials = [self.build_trial(item, condition, materials["name"])
                   for item, condition in zip(items, trial_conditions)]
         return trials
+
+
+@register_trial_renderer("04_comprehension_swarm-full")
+class ComprehensionSwarmFullRenderer(SwarmAnaphorPilotRenderer):
+
+    TOTAL_NUM_TRIALS = 30
+    NUM_EXP_TRIALS = 18
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        agent_is_given, agent_is_subject = condition
+        trial["sentences"] = [
+            trial["setup_clause"]["agent" if agent_is_given
+                                  else "location"].capitalize() + ".",
+            trial["critical_clause"]["agent" if agent_is_subject
+                                     else "location"].capitalize() + "."
+        ]
+
+        trial["prompt"] = " ".join([
+            "How", "many" if trial["agent_plural"] else "much",
+            trial["agent"],
+            "are" if trial["agent_plural"] else "is",
+            trial["prompt_preposition"],
+            trial["location_determiner"],
+            trial["location"]
+        ]) + "?"
+
+        return trial
+
+    def get_filler_trials(self, materials, num_trials: int):
+        empty_items = [item for item in materials["items"]
+                       if item["rating"] == "empty"]
+        full_items = [item for item in materials["items"]
+                      if item["rating"] == "full"]
+
+        # Sample an equal balance of "empty" and "full"
+        num_empty = num_trials // 2
+
+        bad_trials = random.sample(empty_items, num_empty)
+        good_trials = random.sample(full_items, num_trials - num_empty)
+        all_trials = bad_trials + good_trials
+
+        all_trials = [{
+            "materials_id": materials["name"],
+            "item_id": trial["id"],
+            "condition_id": ["filler", trial["rating"]],
+
+            "sentences": [trial["sentence"]],
+            "prompt": trial["prompt"],
+        } for trial in all_trials]
+
+        return all_trials
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # sample random subject settings for each item
+        # topic manipulation is not relevant here -- we'll just set to
+        # zero = location. Not actually used by our `build_trial`.
+        condition_choices = [
+            (0, 0),  # given = l, subject = l
+            (0, 1),  # given = l, subject = a
+            (1, 0),  # given = a, subject = l
+            (1, 1),  # given = a, subject = a
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
