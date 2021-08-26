@@ -11,37 +11,10 @@ from util import random_name
 
 
 class TrialRenderer(object):
+    # NB not threadsafe.
 
     def __init__(self, experiment_name):
         self.experiment_name = experiment_name
-
-    def get_trials(materials: list, materials_id: str, args=None):
-        """
-        Render trials for the given set of materials.
-
-        Args:
-            materials:
-            materials_id:
-            args: Other arguments from the request.
-        """
-        raise NotImplementedError()
-
-
-TRIAL_RENDERERS = {}
-
-
-def register_trial_renderer(experiment_name):
-    def decorator(cls):
-        TRIAL_RENDERERS[experiment_name] = cls
-        return cls
-
-    return decorator
-
-
-class SwarmPilotRenderer(TrialRenderer):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
         # Template variables deployed in a given item/trial
         self._var_cache = {}
@@ -71,6 +44,37 @@ class SwarmPilotRenderer(TrialRenderer):
             "her" if gender == "female" else "his"
 
         return self._replace_name(name_id, subtype=subtype)
+
+    def get_trials(self, materials: list, materials_id: str, args=None):
+        """
+        Render trials for the given set of materials.
+
+        Args:
+            materials:
+            materials_id:
+            args: Other arguments from the request.
+        """
+        raise NotImplementedError()
+
+        for item in materials:
+            self._reset_var_cache()
+
+            # render trial from item
+            pass
+
+
+TRIAL_RENDERERS = {}
+
+
+def register_trial_renderer(experiment_name):
+    def decorator(cls):
+        TRIAL_RENDERERS[experiment_name] = cls
+        return cls
+
+    return decorator
+
+
+class SwarmPilotRenderer(TrialRenderer):
 
     def _filter_materials(self, materials):
         # drop any materials marked for exclusion
