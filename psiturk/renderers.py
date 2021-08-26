@@ -45,6 +45,17 @@ class TrialRenderer(object):
 
         return self._replace_name(name_id, subtype=subtype)
 
+    def process_field(self, item_data, field):
+        field = item_data[field]
+
+        # Find--replace person name variables and related possessives
+        field = re.sub(
+            r"%PERSON(\d+)(?:_([^%]+))?%",
+            lambda match: self._replace_name(match.group(1), match.group(2)),
+            field)
+
+        return field
+
     def get_trials(self, materials: list, materials_id: str, args=None):
         """
         Render trials for the given set of materials.
@@ -92,17 +103,6 @@ class SwarmPilotRenderer(TrialRenderer):
         items = random.sample(items, self.NUM_EXP_TRIALS)
 
         return items
-
-    def process_field(self, item_data, field):
-        field = item_data[field]
-
-        # Find--replace person name variables and related possessives
-        field = re.sub(
-            r"%PERSON(\d+)(?:_([^%]+))?%",
-            lambda match: self._replace_name(match.group(1), match.group(2)),
-            field)
-
-        return field
 
     def build_trial(self, item, condition, materials_id):
         self._reset_var_cache()
