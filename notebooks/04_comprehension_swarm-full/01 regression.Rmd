@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+```{r}
+df <- read_csv(
+  "merged_df.csv",
+  col_types = list(
+    uniqueid = col_factor()
+  ))
+glimpse(df)
+```
+
+```{r}
+filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler")))
+```
+
+
+```{r}
+model <- lmer(slider_value ~ agent_is_given * agent_is_subject + 
+                (agent_is_subject|item_id/agent_is_given) + 
+                (agent_is_given * agent_is_subject|uniqueid),
+              data=filtered_df)
+summary(model)
+```
+```{r}
+ranef(model)
+```
+```{r}
+library(brms)
+```
+
+```{r}
+filtered_df_trans <- filtered_df %>% mutate(slider_value = (slider_value + 0.1) / 100.2)
+filtered_df_trans$slider_value
+model.brm <- brm(slider_value ~ agent_is_given * agent_is_subject + 
+                   (agent_is_subject|item_id/agent_is_given) + 
+                   (agent_is_given * agent_is_subject|uniqueid),
+                 data=filtered_df_trans, family="beta")
+```
+```{r}
+summary(model.brm)
+```
+
