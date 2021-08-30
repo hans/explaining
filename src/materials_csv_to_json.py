@@ -5,7 +5,8 @@ from pathlib import Path
 
 
 def main(args):
-    ret = {"name": Path(args.csv).stem}
+    path = Path(args.csv)
+    ret = {"name": str(path.parent / path.stem)}
     items = []
 
     with open(args.csv) as f:
@@ -17,7 +18,7 @@ def main(args):
             to_boolean = [k for k, v in row.items() if v in ["TRUE", "FALSE"]]
             for k in to_boolean:
                 row[k] = row[k] == "TRUE"
-                
+
             items.append(row)
 
     ret["items"] = items
