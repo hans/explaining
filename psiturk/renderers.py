@@ -744,6 +744,10 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
 
             "sentence": trial["sentence"],
             "prompt": trial["prompt"],
+            "slider_labels":
+                ["0% / empty", "100% / completely full"]
+                if trial["scale type"] == "fill"
+                else ["0% / not covered at all", "100% / completely covered"],
         } for trial in all_trials]
 
         return all_trials
