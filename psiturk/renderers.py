@@ -682,7 +682,7 @@ class SprayLoadPilotRenderer(TrialRenderer):
 @register_trial_renderer("05_comprehension_spray-load-construction-meaning")
 class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
 
-    TOTAL_NUM_TRIALS = 34
+    TOTAL_NUM_TRIALS = 36
     NUM_EXP_TRIALS = 24
 
     def build_trial(self, item, condition, materials_id):
