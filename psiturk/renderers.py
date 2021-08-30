@@ -694,7 +694,7 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
                 "are" if trial["location"]["is_plural"] else "is",
                 "the",
                 trial["location"]["light"],
-                "covered by the",
+                "now covered by the",
                 trial["theme"]["light"],
             ]) + "?"
 
@@ -708,7 +708,7 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
                 "are" if trial["location"]["is_plural"] else "is",
                 "the",
                 trial["location"]["light"],
-                "filled by the",
+                "now filled by the",
                 trial["theme"]["light"],
             ]) + "?"
 
