@@ -577,3 +577,189 @@ class ComprehensionSwarmFullRenderer(SwarmAnaphorPilotRenderer):
         trials = [self.build_trial(item, condition, materials["name"])
                   for item, condition in zip(items, trial_conditions)]
         return trials
+
+
+#####################
+
+
+class SprayLoadPilotRenderer(TrialRenderer):
+
+    def _filter_materials(self, materials):
+        # drop any materials marked for exclusion
+        items = [item for item in materials["items"] if not item["exclude"]]
+
+        # drop materials with missing fields
+        critical_fields = ["S", "T", "T heavy", "V", "V pres", "V past simp",
+                           "L", "L heavy", "P", "scale type"]
+        items = [item for item in items
+                 if not any(not item[field] for field in critical_fields)]
+        return items
+
+    def _filter_and_sample_materials(self, materials):
+        items = self._filter_materials(materials)
+        items = random.sample(items, self.NUM_EXP_TRIALS)
+
+        return items
+
+    def build_trial(self, item, condition, materials_id):
+        self._reset_var_cache()
+
+        # prepare function for quickly processing item data
+        p = functools.partial(self.process_field, item)
+
+        # Prepare data.
+        trial = {
+            "materials_id": materials_id,
+            "item_id": item["id"],
+            "condition_id": condition,
+
+            "subject": p("S"),
+            "theme": {
+                "light": p("T"),
+                "heavy": p("T heavy"),
+
+                "is_plural": item["T plural?"],
+            },
+            "location": {
+                "light": p("L"),
+                "heavy": p("L heavy"),
+
+                "is_plural": item["L plural?"],
+            },
+            "verb": {
+                "lemma": item["V"],
+                "present": item["V pres"],
+                "past simp": item["V past simp"],
+            },
+
+            "scale_type": item["scale type"],
+
+            "preposition": item["P"],
+            "prompt_preposition": item["Prompt P"],
+        }
+
+        # Start building specific trial content based on condition.
+        t_is_object, l_heavy, t_heavy = condition
+
+        location = trial["location"]["heavy" if l_heavy else "light"]
+        theme = trial["theme"]["heavy" if t_heavy else "light"]
+        postverb = " ".join(
+            [theme, trial["preposition"], location] if t_is_object else
+            [location, "with", theme]
+        )
+
+        trial["sentence"] = " ".join([
+            trial["subject"],
+            trial["verb"]["past simp"],
+            postverb
+        ]) + "."
+
+        return trial
+
+    def get_filler_trials(self, materials, num_trials: int):
+        raise NotImplementedError()
+
+    def get_exp_trials(self, materials):
+        raise NotImplementedError()
+
+    def get_trials(self, materials, materials_id, args=None):
+        exp_materials, filler_materials = materials
+
+        exp_trials = self.get_exp_trials(exp_materials)
+
+        num_fillers = self.TOTAL_NUM_TRIALS - self.NUM_EXP_TRIALS
+        filler_trials = self.get_filler_trials(filler_materials, num_fillers)
+
+        trials = exp_trials + filler_trials
+        random.shuffle(trials)
+
+        ret = dict(experiment=self.experiment_name, materials_id=materials_id,
+                   trials=trials)
+
+        return ret
+
+
+@register_trial_renderer("05_comprehension_spray-load-construction-meaning")
+class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
+
+    TOTAL_NUM_TRIALS = 34
+    NUM_EXP_TRIALS = 24
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        if trial["scale_type"] == "cover":
+            prompt = " ".join([
+                "To what degree",
+                "are" if trial["location"]["is_plural"] else "is",
+                "the",
+                trial["location"]["light"],
+                "covered by the",
+                trial["theme"]["light"],
+            ]) + "?"
+
+            slider_labels = [
+                "0% / not covered at all",
+                "100% / completely covered",
+            ]
+        elif trial["scale_type"] == "fill":
+            prompt = " ".join([
+                "To what degree",
+                "are" if trial["location"]["is_plural"] else "is",
+                "the",
+                trial["location"]["light"],
+                "filled by the",
+                trial["theme"]["light"],
+            ]) + "?"
+
+            slider_labels = [
+                "0% / empty",
+                "100% / completely full",
+            ]
+        else:
+            raise ValueError("Unknown item scale type %s" % trial["scale_type"])
+
+        trial["prompt"] = prompt
+        trial["slider_labels"] = slider_labels
+
+        return trial
+
+    def get_filler_trials(self, materials, num_trials: int):
+        empty_items = [item for item in materials["items"]
+                       if item["rating"] == "empty"]
+        full_items = [item for item in materials["items"]
+                      if item["rating"] == "full"]
+
+        # Sample an equal balance of "empty" and "full"
+        num_empty = num_trials // 2
+
+        bad_trials = random.sample(empty_items, num_empty)
+        good_trials = random.sample(full_items, num_trials - num_empty)
+        all_trials = bad_trials + good_trials
+
+        all_trials = [{
+            "item_id": trial["id"],
+            "materials_id": materials["name"],
+            "condition_id": ["filler", trial["rating"]],
+
+            "sentence": trial["sentence"],
+            "prompt": trial["prompt"],
+        } for trial in all_trials]
+
+        return all_trials
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # sample random object settings for each item
+        # weight fixed to light for all conditions.
+        condition_choices = [
+            (0, False, False),  # object = L, L not heavy, T not heavy
+            (1, False, False),  # object = T, L not heavy, T not heavy
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
