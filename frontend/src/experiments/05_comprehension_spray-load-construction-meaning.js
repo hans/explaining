@@ -49,6 +49,16 @@ export async function createTimeline() {
   timeline.push(a(trials.age_block));
   timeline.push(a(trials.demo_block));
 
+  // slider labels for practice trials
+  const slider_labels_fill = [
+    "0% / empty",
+    "100% / completely full"
+  ];
+  const slider_labels_cover = [
+    "0% / not covered at all",
+    "100% / completely covered"
+  ];
+
   // TODO see if we need to change intro / practice phases
   timeline = timeline.concat([
     {
@@ -81,7 +91,8 @@ export async function createTimeline() {
 
         <p class="jspsych-instructions">
           Your job is to share your best guess about <strong>how full</strong>
-          some object is, possibly in an abstract sense.
+          some object is, or <strong>how completely covered</strong> it is by
+          some material.
         </p>
 
         <p class="jspsych-instructions">
@@ -98,40 +109,45 @@ export async function createTimeline() {
     a({
       ...slider_trial_template,
       stimulus: "The bookshelf is chock-full of books.",
-      post_stimulus_prompt: "How many books are on the bookshelf?",
-      data: { condition_id: ["practice", "solid", "full"] },
+      post_stimulus_prompt: "To what degree is the bookshelf full of books?",
+      slider_labels: slider_labels_fill,
+      data: { condition_id: ["practice", "fill", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
     a({
       ...slider_trial_template,
       stimulus: "The pool is starting to overflow.",
-      post_stimulus_prompt: "How much water is in the pool?",
-      data: { condition_id: ["practice", "liquid", "full"] },
+      post_stimulus_prompt: "To what degree is the pool full of water?",
+      slider_labels: slider_labels_fill,
+      data: { condition_id: ["practice", "fill", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
     a({
       ...slider_trial_template,
-      stimulus: "Everyone agreed that there was very little passion in the music.",
-      post_stimulus_prompt: "How much passion was in the music?",
-      data: { condition_id: ["practice", "abstract", "empty"] },
+      stimulus: "There was not even a speck of dust on the glass table.",
+      post_stimulus_prompt: "To what degree is the glass table covered in dust?",
+      slider_labels: slider_labels_cover,
+      data: { condition_id: ["practice", "cover", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
     a({
       ...slider_trial_template,
       stimulus: "The books are missing from the bookshelf.",
-      post_stimulus_prompt: "How many books are on the bookshelf?",
-      data: { condition_id: ["practice", "solid", "empty"] },
+      post_stimulus_prompt: "To what degree is the bookshelf full of books?",
+      slider_labels: slider_labels_fill,
+      data: { condition_id: ["practice", "fill", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
     a({
       ...slider_trial_template,
-      stimulus: "Everyone at the meeting felt anxiety about the future of the company.",
-      post_stimulus_prompt: "How much anxiety was at the meeting?",
-      data: { condition_id: ["practice", "abstract", "full"] },
+      stimulus: "He spread the grass seed over the entire lawn.",
+      post_stimulus_prompt: "To what degree is the lawn covered by grass seed?",
+      slider_labels: slider_labels_cover,
+      data: { condition_id: ["practice", "cover", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
