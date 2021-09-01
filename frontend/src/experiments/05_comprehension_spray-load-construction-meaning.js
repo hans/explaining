@@ -104,8 +104,6 @@ export async function createTimeline() {
       ],
     },
 
-
-    // TODO add slider labels
     a({
       ...slider_trial_template,
       stimulus: "The bookshelf is chock-full of books.",
