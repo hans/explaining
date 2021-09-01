@@ -23,7 +23,7 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "05_comprehension_spray-load-construction-meaning";
-const MATERIALS_HASH = "spray-load_comprehension-001-matchdet-diffscales";
+const MATERIALS_HASH = "spray-load-001-typos";
 const FILLERS_HASH = "fillers/spray-load_comprehension-001-diffscale";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
