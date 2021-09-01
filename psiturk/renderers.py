@@ -4,6 +4,7 @@ raw data for trial sequences. Final minimal rendering happens on frontend.
 """
 
 import functools
+import itertools
 import random
 import re
 
@@ -638,21 +639,28 @@ class SprayLoadPilotRenderer(TrialRenderer):
             "prompt_preposition": item["Prompt P"],
         }
 
-        # Start building specific trial content based on condition.
-        t_is_object, l_heavy, t_heavy = condition
+        # Build all sentences for all possible conditions. They are identified
+        # in the output map by the concatenation of the int values of the
+        # condition tuple as a string, e.g. "010" for T is not object, L heavy,
+        # T not heavy.
+        all_conditions = itertools.product([0, 1], repeat=3)
+        trial["sentences"] = {}
+        for t_is_object, l_heavy, t_heavy in all_conditions:
+            key = f"{t_is_object}{l_heavy}{t_heavy}"
 
-        location = trial["location"]["heavy" if l_heavy else "light"]
-        theme = trial["theme"]["heavy" if t_heavy else "light"]
-        postverb = " ".join(
-            [theme, trial["preposition"], location] if t_is_object else
-            [location, "with", theme]
-        )
+            location = trial["location"]["heavy" if l_heavy else "light"]
+            theme = trial["theme"]["heavy" if t_heavy else "light"]
+            postverb = " ".join(
+                [theme, trial["preposition"], location.strip(",")]
+                if t_is_object else
+                [location, "with", theme.strip(",")]
+            )
 
-        trial["sentence"] = " ".join([
-            trial["subject"],
-            trial["verb"]["past simp"],
-            postverb
-        ]) + "."
+            trial["sentences"][key] = " ".join([
+                trial["subject"],
+                trial["verb"]["past simp"],
+                postverb
+            ]) + "."
 
         return trial
 
@@ -722,6 +730,9 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
         trial["prompt"] = prompt
         trial["slider_labels"] = slider_labels
 
+        sentence_key = "000" if condition[0] else "100"
+        trial["sentence"] = trial["sentences"][sentence_key]
+
         return trial
 
     def get_filler_trials(self, materials, num_trials: int):
@@ -758,8 +769,72 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
         # sample random object settings for each item
         # weight fixed to light for all conditions.
         condition_choices = [
-            (0, False, False),  # object = L, L not heavy, T not heavy
-            (1, False, False),  # object = T, L not heavy, T not heavy
+            (0, 0, 0),  # object = L, L not heavy, T not heavy
+            (1, 0, 0),  # object = T, L not heavy, T not heavy
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
+
+
+@register_trial_renderer("06_production_spray-load-weight")
+class ProductionSprayLoadWeightRenderer(SprayLoadPilotRenderer):
+
+    TOTAL_NUM_TRIALS = 36
+    NUM_EXP_TRIALS = 24
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        _, l_heavy, t_heavy = condition
+        key_suffix = f"{l_heavy}{t_heavy}"
+
+        # NB keys in sentence_options match with 0th element of condition tuple
+        # in other experiments. i.e. 0 <=> !t_is_object <=> locative
+        # construction.
+        trial["sentence_options"] = {
+            0: trial["sentences"][f"0{key_suffix}"],
+            1: trial["sentences"][f"1{key_suffix}"]
+        }
+
+        return trial
+
+    def get_filler_trials(self, materials, num_trials: int):
+        trials = random.sample(materials["items"], num_trials)
+
+        def build_trial(t):
+            self._reset_var_cache()
+
+            # prepare function for quickly processing item data
+            p = functools.partial(self.process_field, t)
+
+            return {
+                "materials_id": materials["name"],
+                "item_id": t["id"],
+                "condition_id": ["filler", t["manipulation"],
+                                 t["bad_ungrammatical"]],
+
+                "sentence_options": {
+                    "good": p("good_sentence"),
+                    "bad": p("bad_sentence"),
+                },
+            }
+        trials = [build_trial(t) for t in trials]
+
+        return trials
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # fix object setting -- this will be compared within-item /
+        # within-subject -- and vary heaviness.
+        condition_choices = [
+            (None, 0, 0),  # L not heavy, T not heavy
+            (None, 1, 0),  # L heavy, T not heavy
+            (None, 0, 1),
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
