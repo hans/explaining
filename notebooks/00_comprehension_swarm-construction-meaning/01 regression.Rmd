@@ -31,3 +31,14 @@ summary(model)
 ranef(model)
 ```
 
+```{r}
+filtered_df_trans <- filtered_df %>% 
+  mutate(slider_value = (slider_value + 0.1) / 100.2,
+         agent_is_concrete=`A concrete?`)
+model.brm <- brm(slider_value ~ agent_is_subject + (1|item_id) + (agent_is_subject|uniqueid),
+                 data=filtered_df_trans, family="beta")
+```
+```{r}
+summary(model.brm)
+```
+
