@@ -32,10 +32,9 @@ contrasts(filtered_df$`A concrete?`) = c(-1, 1)
 
 ```{r}
 model <- lmer(slider_value ~ agent_is_given * agent_is_subject +
-                `A concrete?` * agent_is_subject + 
-                `A concrete?` * agent_is_given +
+                `A concrete?` * agent_is_subject +
                 (agent_is_given * agent_is_subject|item_id) + 
-                (agent_is_given * agent_is_subject|uniqueid),
+                (agent_is_given * agent_is_subject + `A concrete?` * agent_is_subject|uniqueid),
               data=filtered_df,
               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
 summary(model)
@@ -54,7 +53,7 @@ filtered_df_trans <- filtered_df %>%
 model.brm <- brm(slider_value ~ agent_is_given * agent_is_subject +
                    agent_is_concrete * agent_is_subject + 
                    (agent_is_given * agent_is_subject|item_id) + 
-                   (agent_is_given * agent_is_subject|uniqueid),
+                   (agent_is_given * agent_is_subject + agent_is_concrete * agent_is_subject|uniqueid),
                  data=filtered_df_trans, family="beta")
 ```
 ```{r}
