@@ -22,10 +22,18 @@ glimpse(df)
 filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler")))
 ```
 
+```{r}
+# contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
+contrasts(filtered_df$agent_is_subject) = c(-1, 1)
+contrasts(filtered_df$agent_is_given) = c(-1, 1)
+contrasts(filtered_df$`A concrete?`) = c(-1, 1)
+```
+
 
 ```{r}
 model <- lmer(slider_value ~ agent_is_given * agent_is_subject +
                 `A concrete?` * agent_is_subject + 
+                `A concrete?` * agent_is_given +
                 (agent_is_given * agent_is_subject|item_id) + 
                 (agent_is_given * agent_is_subject|uniqueid),
               data=filtered_df,
