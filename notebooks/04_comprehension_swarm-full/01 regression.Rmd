@@ -42,6 +42,7 @@ summary(model)
 ```{r}
 ranef(model)
 ```
+
 ```{r}
 library(brms)
 ```
