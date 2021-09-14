@@ -3,23 +3,18 @@ import csv
 import json
 from pathlib import Path
 
+import pandas as pd
+
 
 def main(args):
     path = Path(args.csv)
     ret = {"name": str(path.parent / path.stem)}
     items = []
 
-    with open(args.csv) as f:
-        csvf = csv.DictReader(f)
-        for idx, row in enumerate(csvf):
-            row["id"] = idx
-
-            # parse boolean values
-            to_boolean = [k for k, v in row.items() if v in ["TRUE", "FALSE"]]
-            for k in to_boolean:
-                row[k] = row[k] == "TRUE"
-
-            items.append(row)
+    materials_df = pd.read_csv(path)
+    for idx, row in enumerate(materials_df.to_dict(orient="records")):
+        row["id"] = idx
+        items.append(row)
 
     ret["items"] = items
 
