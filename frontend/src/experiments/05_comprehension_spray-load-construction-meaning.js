@@ -133,7 +133,7 @@ export async function createTimeline() {
 
     a({
       ...slider_trial_template,
-      stimulus: "The books are missing from the bookshelf.",
+      stimulus: "The bookshelf is devoid of books.",
       post_stimulus_prompt: "To what degree is the bookshelf full of books?",
       slider_labels: slider_labels_fill,
       data: { condition_id: ["practice", "fill", "empty"] },
