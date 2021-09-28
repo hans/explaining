@@ -730,7 +730,7 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
         trial["prompt"] = prompt
         trial["slider_labels"] = slider_labels
 
-        sentence_key = "000" if condition[0] else "100"
+        sentence_key = "".join(map(str, condition))
         trial["sentence"] = trial["sentences"][sentence_key]
 
         return trial
@@ -835,6 +835,30 @@ class ProductionSprayLoadWeightRenderer(SprayLoadPilotRenderer):
             (None, 0, 0),  # L not heavy, T not heavy
             (None, 1, 0),  # L heavy, T not heavy
             (None, 0, 1),
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
+
+
+@register_trial_renderer("07_comprehension_spray-load-construction-meaning")
+class ComprehensionSprayLoadFullRenderer(ComprehensionSprayLoadMeaningRenderer):
+
+    TOTAL_NUM_TRIALS = 36
+    NUM_EXP_TRIALS = 24
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # sample two constructions X {PP is heavy, PP is not heavy}
+        condition_choices = [
+            (0, 0, 0),  # object = L, L not heavy, T not heavy
+            (0, 0, 1),  # object = L, L not heavy, T heavy
+            (1, 0, 0),  # object = T, L not heavy, T not heavy
+            (1, 1, 0),  # object = T, L heavy, T not heavy
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
