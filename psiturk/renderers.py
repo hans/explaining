@@ -5,6 +5,7 @@ raw data for trial sequences. Final minimal rendering happens on frontend.
 
 import functools
 import itertools
+import math
 import random
 import re
 
@@ -593,7 +594,10 @@ class SprayLoadPilotRenderer(TrialRenderer):
         critical_fields = ["S", "T", "T heavy", "V", "V pres", "V past simp",
                            "L", "L heavy", "P", "scale type"]
         items = [item for item in items
-                 if not any(not item[field] for field in critical_fields)]
+                 if not any(not item[field]
+                                or (type(item[field]) == float
+                                    and math.isnan(item[field]))
+                            for field in critical_fields)]
         return items
 
     def _filter_and_sample_materials(self, materials):
@@ -696,33 +700,30 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
     def build_trial(self, item, condition, materials_id):
         trial = super().build_trial(item, condition, materials_id)
 
-        if trial["scale_type"] == "cover":
-            prompt = " ".join([
-                "To what degree",
-                "are" if trial["location"]["is_plural"] else "is",
-                "the",
-                trial["location"]["light"],
-                "now covered by the",
-                trial["theme"]["light"],
-            ]) + "?"
+        prompt = " ".join([
+            "How", "many" if trial["theme"]["is_plural"] else "much",
+            trial["theme"]["light"],
+            "are" if trial["theme"]["is_plural"] else "is",
+            trial["prompt_preposition"],
+            "the",
+            trial["location"]["light"],
+        ]) + "?"
 
+        if trial["scale_type"] == "cover":
             slider_labels = [
-                "0% / not covered at all",
-                "100% / completely covered",
+                "0% / none",
+
+                f"100% / {trial['location']['light']} "
+                f"{'are' if trial['location']['is_plural'] else 'is'} "
+                f"completely covered",
             ]
         elif trial["scale_type"] == "fill":
-            prompt = " ".join([
-                "To what degree",
-                "are" if trial["location"]["is_plural"] else "is",
-                "the",
-                trial["location"]["light"],
-                "now filled by the",
-                trial["theme"]["light"],
-            ]) + "?"
-
             slider_labels = [
                 "0% / empty",
-                "100% / completely full",
+
+                f"100% / {trial['location']['light']} "
+                f"{'are' if trial['location']['is_plural'] else 'is'} "
+                f"completely full",
             ]
         else:
             raise ValueError("Unknown item scale type %s" % trial["scale_type"])
@@ -756,9 +757,9 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
             "sentence": trial["sentence"],
             "prompt": trial["prompt"],
             "slider_labels":
-                ["0% / empty", "100% / completely full"]
+                ["0% / empty", f"100% / {trial['label_max']}"]
                 if trial["scale type"] == "fill"
-                else ["0% / not covered at all", "100% / completely covered"],
+                else ["0% / not covered at all", f"100% / {trial['label_max']}"],
         } for trial in all_trials]
 
         return all_trials

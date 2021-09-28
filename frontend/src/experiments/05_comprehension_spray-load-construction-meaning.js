@@ -2,7 +2,7 @@
  * Tests whether construction choice has an effect on inferred meaning for
  * *spray/load*-construction.
  *
- * @title 5-10min English sentence understanding task (Explaining 05-01)
+ * @title 5-10min English sentence understanding task (Explaining 05-00)
  * @description Help us understand the meanings of English words and sentences.
  * @version
  */
@@ -23,8 +23,8 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "05_comprehension_spray-load-construction-meaning";
-const MATERIALS_HASH = "spray-load-001-typos";
-const FILLERS_HASH = "fillers/spray-load_comprehension-001-diffscale";
+const MATERIALS_HASH = "spray-load-002-indefinite";
+const FILLERS_HASH = "fillers/spray-load_comprehension-002-prompt";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
 
@@ -50,13 +50,13 @@ export async function createTimeline() {
   timeline.push(a(trials.demo_block));
 
   // slider labels for practice trials
-  const slider_labels_fill = [
-    "0% / empty",
-    "100% / completely full"
+  const make_slider_labels_fill = (L) => [
+    "0% / none",
+    `100% / the ${L} is completely full`
   ];
-  const slider_labels_cover = [
-    "0% / not covered at all",
-    "100% / completely covered"
+  const make_slider_labels_cover = (L) => [
+    "0% / none",
+    `100% / the ${L} is completely covered`
   ];
 
   // TODO see if we need to change intro / practice phases
@@ -107,8 +107,8 @@ export async function createTimeline() {
     a({
       ...slider_trial_template,
       stimulus: "The bookshelf is chock-full of books.",
-      post_stimulus_prompt: "To what degree is the bookshelf full of books?",
-      slider_labels: slider_labels_fill,
+      post_stimulus_prompt: "How many books are on the bookshelf?",
+      labels: make_slider_labels_fill("bookshelf"),
       data: { condition_id: ["practice", "fill", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
@@ -116,8 +116,8 @@ export async function createTimeline() {
     a({
       ...slider_trial_template,
       stimulus: "The pool is starting to overflow.",
-      post_stimulus_prompt: "To what degree is the pool full of water?",
-      slider_labels: slider_labels_fill,
+      post_stimulus_prompt: "How much water is in the pool?",
+      labels: make_slider_labels_fill("pool"),
       data: { condition_id: ["practice", "fill", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
@@ -125,8 +125,8 @@ export async function createTimeline() {
     a({
       ...slider_trial_template,
       stimulus: "There was not even a speck of dust on the glass table.",
-      post_stimulus_prompt: "To what degree is the glass table covered in dust?",
-      slider_labels: slider_labels_cover,
+      post_stimulus_prompt: "How much dust is on the table?",
+      labels: make_slider_labels_cover("table"),
       data: { condition_id: ["practice", "cover", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
@@ -134,8 +134,8 @@ export async function createTimeline() {
     a({
       ...slider_trial_template,
       stimulus: "The bookshelf is devoid of books.",
-      post_stimulus_prompt: "To what degree is the bookshelf full of books?",
-      slider_labels: slider_labels_fill,
+      post_stimulus_prompt: "How many books are on the bookshelf?",
+      labels: make_slider_labels_fill("bookshelf"),
       data: { condition_id: ["practice", "fill", "empty"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
@@ -143,8 +143,8 @@ export async function createTimeline() {
     a({
       ...slider_trial_template,
       stimulus: "He spread the grass seed over the entire lawn.",
-      post_stimulus_prompt: "To what degree is the lawn covered by grass seed?",
-      slider_labels: slider_labels_cover,
+      post_stimulus_prompt: "How much grass seed is on the lawn?",
+      labels: make_slider_labels_cover("lawn"),
       data: { condition_id: ["practice", "cover", "full"] },
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
