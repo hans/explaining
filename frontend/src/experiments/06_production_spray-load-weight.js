@@ -21,7 +21,7 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "06_production_spray-load-weight";
-const MATERIALS_HASH = "spray-load-001-typos";
+const MATERIALS_HASH = "spray-load-002-indefinite";
 const FILLERS_HASH = "fillers/spray-load_production-000-base";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
