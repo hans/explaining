@@ -705,7 +705,6 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
             trial["theme"]["light"],
             "are" if trial["theme"]["is_plural"] else "is",
             trial["prompt_preposition"],
-            "the",
             trial["location"]["light"],
         ]) + "?"
 
