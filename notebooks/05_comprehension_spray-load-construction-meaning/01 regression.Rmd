@@ -58,7 +58,7 @@ model.brm <- brm(slider_value ~
                    (theme_is_object|item_key) + 
                    (theme_is_object|uniqueid),
                  data=filtered_df_trans, family="beta",
-                 chains=4, cores=4)
+                 chains=4, cores=1)
 ```
 ```{r}
 summary(model.brm)
