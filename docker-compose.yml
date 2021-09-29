@@ -11,3 +11,29 @@ services:
         ports:
             - "12391:22362"
         command: bash -c "psiturk server on && tail -F /dev/null"
+
+        # DEV
+        stdin_open: true
+        tty: true
+
+    rstudio:
+        build:
+            context: .
+            dockerfile: Dockerfile.verse
+        volumes:
+            - ./:/home/rstudio
+        environment:
+            - PASSWORD=pass
+        ports:
+            - "8787:8787"
+
+    lab:
+        build:
+            context: .
+            dockerfile: Dockerfile.lab
+        volumes:
+            - ./:/home/jovyan
+        environment:
+            - JUPYTER_ENABLE_LAB=yes
+        ports:
+            - "8888:8888"
