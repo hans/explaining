@@ -26,7 +26,7 @@ const FILLERS_HASH = "fillers/spray-load_production-000-base";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
 
-const COMPENSATION = "$1.00";
+const COMPENSATION = "$0.50";
 
 // Helper function to add experiment ID to block spec
 const a = (block) => trials.add_data_fields(block, { experiment_id: EXPERIMENT_NAME });
