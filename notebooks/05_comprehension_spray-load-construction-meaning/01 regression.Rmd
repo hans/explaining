@@ -1,0 +1,66 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+```{r}
+df <- read_csv(
+  "merged_df.csv",
+  col_types = list(
+    uniqueid = col_factor()
+  ))
+glimpse(df)
+```
+
+```{r}
+filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler")))
+```
+
+```{r}
+# contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
+contrasts(filtered_df$theme_is_object) = c(-1, 1)
+```
+
+
+```{r}
+model <- lmer(slider_value ~
+                theme_is_object +
+                (theme_is_object|item_key) + 
+                (theme_is_object|uniqueid),
+              data=filtered_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model)
+```
+```{r}
+ranef(model)
+```
+
+```{r}
+ranef(model)$item_key %>% arrange(`(Intercept)`) 
+```
+
+
+```{r}
+library(brms)
+```
+
+```{r}
+filtered_df_trans <- filtered_df %>% 
+  mutate(slider_value = (slider_value + 0.1) / 100.2)
+model.brm <- brm(slider_value ~
+                   theme_is_object + 
+                   (theme_is_object|item_key) + 
+                   (theme_is_object|uniqueid),
+                 data=filtered_df_trans, family="beta",
+                 chains=4, cores=4)
+```
+```{r}
+summary(model.brm)
+```
+
