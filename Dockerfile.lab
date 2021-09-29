@@ -1,0 +1,4 @@
+FROM jupyter/datascience-notebook
+
+RUN pip install spacy spacy_syllables
+RUN python -m spacy download en_core_web_sm
