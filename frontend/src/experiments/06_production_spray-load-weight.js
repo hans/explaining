@@ -2,7 +2,7 @@
  * Tests whether weight manipulation has an effect on production preference
  * for the *spray/load* alternation.
  *
- * @title 5-10min English writing task (Explaining 06-00)
+ * @title 2-3min English writing task (Explaining 06-00)
  * @description Help us pick out natural English sentences.
  * @version
  */
