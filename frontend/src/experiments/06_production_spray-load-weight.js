@@ -122,6 +122,7 @@ export async function createTimeline() {
             "The following two sentences are slightly different. Which " +
             "sentence sounds more natural to you?",
           options: sentences,
+          required: true,
         },
       ],
 
