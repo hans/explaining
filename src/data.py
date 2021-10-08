@@ -15,6 +15,9 @@ L = logging.getLogger(__name__)
 PSITURK_DB_PATH = "data/participants.db"
 PSITURK_DATA_TABLE = "turkdemo"
 
+# useless trial types which only serve a function on the frontend, and which should always be ignored
+IGNORE_TRIAL_TYPES = {"preload"}
+
 
 # Allows us to return sqlite rows as dicts rather than tuples.
 def dict_factory(cursor, row):
@@ -56,6 +59,9 @@ def get_trials_df(raw_results, extract_data_fields=()):
         
         for trial in data["data"]:
             tdata = trial["trialdata"]
+            if tdata["trial_type"] in IGNORE_TRIAL_TYPES:
+                continue
+                
             info = copy(base_info)
             # Extract generally useful trial-specific data
             info.update({c: tdata[c] for c in ["trial_type", "trial_index", "rt", "internal_node_id"]})
@@ -78,6 +84,13 @@ def get_trials_df(raw_results, extract_data_fields=()):
                 info.update({
                     "slider_value": tdata["response"],
                     "slider_copout": tdata.get("copout", False),
+                })
+                
+                trials.append(info)
+            elif tdata["trial_type"] == "html-image-response-with-copout":
+                info.update({
+                    "response": tdata["response"],
+                    "image_copout": tdata.get("copout", False),
                 })
                 
                 trials.append(info)
