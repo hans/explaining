@@ -118,10 +118,10 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
     let enabled = false;
 
     // add event listeners to buttons
-    display_element.find('.jspsych-html-image-response-button').click(() => {
+    display_element.find('.jspsych-html-image-response-button').click((e) => {
       if (!enabled) return;
 
-      const choice = $(this).data("choice");
+      const choice = $(e.currentTarget).data("choice");
       after_response(choice);
     });
 
@@ -150,7 +150,7 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
       // measure rt
       var end_time = performance.now();
       var rt = end_time - start_time;
-      response.button = parseInt(choice);
+      response.button = choice;
       response.rt = rt;
 
       // after a valid response, the stimulus will have the CSS class 'responded'
