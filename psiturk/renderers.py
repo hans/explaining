@@ -618,6 +618,8 @@ class SprayLoadPilotRenderer(TrialRenderer):
             "item_id": item["id"],
             "condition_id": condition,
 
+            "images": {},
+
             "subject": p("S"),
             "theme": {
                 "light": p("T"),
@@ -665,6 +667,13 @@ class SprayLoadPilotRenderer(TrialRenderer):
                 trial["verb"]["past simp"],
                 postverb
             ]) + "."
+
+        # Add image paths if available.
+        for image_key in ["image max", "image mid intention complete",
+                          "image mid intention incomplete", "image min"]:
+            if item.get(image_key) is not None:
+                dst = image_key.lstrip("image ").replace(" ", "_")
+                trial["images"][dst] = item[image_key]
 
         return trial
 
@@ -752,6 +761,7 @@ class ComprehensionSprayLoadMeaningRenderer(SprayLoadPilotRenderer):
             "item_id": trial["id"],
             "materials_id": materials["name"],
             "condition_id": ["filler", trial["rating"]],
+            "measure": "slider",
 
             "sentence": trial["sentence"],
             "prompt": trial["prompt"],
@@ -844,25 +854,28 @@ class ProductionSprayLoadWeightRenderer(SprayLoadPilotRenderer):
         return trials
 
 
-@register_trial_renderer("07_comprehension_spray-load-construction-meaning")
-class ComprehensionSprayLoadFullRenderer(ComprehensionSprayLoadMeaningRenderer):
+@register_trial_renderer("07_comprehension_spray-load-construction-meaning-with-images")
+class ComprehensionSprayLoadMeaningWithImagesRenderer(ComprehensionSprayLoadMeaningRenderer):
 
-    TOTAL_NUM_TRIALS = 36
-    NUM_EXP_TRIALS = 24
+    TOTAL_NUM_TRIALS = 32
+    NUM_EXP_TRIALS = 20
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        # If images are available for this trial, overwrite prompt usw.
+        from pprint import pprint
+        pprint(trial)
+        if any(image is not None for image in trial["images"].values()):
+            trial["prompt"] += "<br/>Pick the image which is best described by the sentence."
+            trial["measure"] = "forced_choice_images"
+        else:
+            trial["measure"] = "slider"
+
+        return trial
 
     def get_exp_trials(self, materials):
-        items = self._filter_and_sample_materials(materials)
-
-        # sample two constructions X {PP is heavy, PP is not heavy}
-        condition_choices = [
-            (0, 0, 0),  # object = L, L not heavy, T not heavy
-            (0, 0, 1),  # object = L, L not heavy, T heavy
-            (1, 0, 0),  # object = T, L not heavy, T not heavy
-            (1, 1, 0),  # object = T, L heavy, T not heavy
-        ]
-
-        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
-
-        trials = [self.build_trial(item, condition, materials["name"])
-                  for item, condition in zip(items, trial_conditions)]
+        trials = super().get_exp_trials(materials)
+        # DEV HACK HACK DEV
+        trials = [t for t in trials if t["measure"] != "slider"]
         return trials

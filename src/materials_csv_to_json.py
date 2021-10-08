@@ -12,6 +12,10 @@ def main(args):
     items = []
 
     materials_df = pd.read_csv(path)
+
+    # NaN -> None for strict JSON compatibility
+    materials_df = materials_df.replace({float('nan'): None})
+
     for idx, row in enumerate(materials_df.to_dict(orient="records")):
         row["id"] = idx
         items.append(row)

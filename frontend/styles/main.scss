@@ -7,15 +7,20 @@ p.jspsych-instructions {
   margin: 1em auto;
 }
 
-#jspsych-html-slider-response-stimulus {
+#jspsych-html-slider-response-stimulus, #jspsych-html-image-response-stimulus {
   font-weight: bold;
 }
 
-#jspsych-html-slider-response-post-stimulus {
+#jspsych-html-slider-response-post-stimulus, #jspsych-html-image-response-post-stimulus {
   margin: 1em 0;
 }
 
 // Make slider container transparent when slider is disabled
 .jspsych-html-slider-response-disabled {
   opacity: 40%;
+}
+
+.jspsych-html-image-response-button {
+  display: inline-block;
+  max-width: 40%;
 }

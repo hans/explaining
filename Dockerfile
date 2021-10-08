@@ -26,7 +26,7 @@ RUN cd /frontend && \
 
 FROM cpllab/psiturk:3.2.0
 
-RUN pip install names
+RUN pip install names simplejson
 
 COPY materials /materials
 COPY psiturk /psiturk
