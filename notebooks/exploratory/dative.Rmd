@@ -1,0 +1,64 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This notebook contains some exploratory data analysis on the Switchboard dative alternation dataset. This analysis was used to design naturalistic items exhibiting the dative alternation.
+
+```{r}
+library(tidyverse)
+library(languageR)
+```
+
+```{r}
+data(dative)
+glimpse(dative)
+```
+
+## Materials filtering
+
+We're only interested in verbs which have attested uses in both constructions.
+
+```{r}
+valid_verbs <- dative %>%
+  group_by(Verb) %>% 
+    count(RealizationOfRecipient) %>% 
+    pivot_wider(names_from=RealizationOfRecipient, values_from=n) %>% 
+    drop_na() %>%
+  select(Verb)
+
+sub_dative <- semi_join(dative, valid_verbs)
+```
+
+
+## Q1: When are pronominal arguments attested/preferred?
+
+Different verbs have different strengths of preference for pronominal arguments. It's important to see attested examples of non-pronominal arguments in both constructions -- otherwise we might be building an unacceptable sentence for one half of the alternation.
+
+### By verb: proportion of ditransitives with pronominal recipients
+
+```{r}
+sub_dative %>% 
+  filter(RealizationOfRecipient == "NP") %>% 
+  group_by(Verb) %>% 
+    count(PronomOfRec, .drop=FALSE) %>% 
+  group_by(Verb) %>% mutate(total_attested=sum(n)) %>% filter(total_attested > 0) %>% 
+  mutate(proportion_rec_pronominal=prop.table(n)) %>% 
+  filter(PronomOfRec == "pronominal") %>% 
+  select(Verb, n, proportion_rec_pronominal) %>% 
+  arrange(-proportion_rec_pronominal)
+```
+
+### By verb: proportion of PPs with pronominal themes
+
+```{r}
+sub_dative %>% 
+  filter(RealizationOfRecipient == "PP") %>% 
+  group_by(Verb) %>% 
+    count(PronomOfTheme, .drop=FALSE) %>% 
+  group_by(Verb) %>% mutate(total_attested=sum(n)) %>% filter(total_attested > 0) %>% 
+  mutate(proportion_theme_pronominal=prop.table(n)) %>%
+  filter(PronomOfTheme == "pronominal") %>% 
+  select(Verb, total_attested, proportion_theme_pronominal) %>% 
+  arrange(-proportion_theme_pronominal)
+```
