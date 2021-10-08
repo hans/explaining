@@ -24,6 +24,7 @@ import * as _ from "underscore";
 // jsPsych and plugins
 import "jspsych/plugins/jspsych-instructions";
 import "jspsych/plugins/jspsych-html-button-response";
+import "jspsych/plugins/jspsych-preload";
 import "../plugins/html-image-response-with-copout";
 
 import { get_trials } from "../materials";
@@ -35,6 +36,10 @@ const MATERIALS_HASH = "spray-load-003-images";
 const FILLERS_HASH = "fillers/spray-load_comprehension-002-prompt";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];
+
+const COMPENSATION = "$1.00";
+// Don't display images or allow responses for 250 ms on each trial
+const IMAGE_ACTIVATE_DELAY = 250;
 
 const slider_trial_template = {
   type: "html-slider-response-with-copout",
@@ -50,9 +55,11 @@ const image_trial_template = {
     "Which of the following images is this sentence most likely to apply to?",
   copout_text: "This sentence doesn't make sense to me.",
   shuffle: true,
+  activate_delay: IMAGE_ACTIVATE_DELAY,
 };
-
-const COMPENSATION = "$1.00";
+const make_full_image_path = (image_path) => {
+  return `images/${MATERIALS_HASH}/${image_path}`;
+}
 
 // Helper function to add experiment ID to block spec
 const a = (block) => trials.add_data_fields(block, { experiment_id: EXPERIMENT_NAME });
@@ -122,11 +129,14 @@ export async function createTimeline() {
     },
 
     a({
-      ...slider_trial_template,
+      ...image_trial_template,
       stimulus: "The bookshelf is chock-full of books.",
-      post_stimulus_prompt: "How many books are on the bookshelf?",
-      labels: make_slider_labels_fill("bookshelf"),
       data: { condition_id: ["practice", "fill", "full"] },
+      image_choices: _.mapObject({
+        "max": "_practice_bookshelf_full.jpg",
+        "min": "_practice_bookshelf_empty.jpg",
+      }, make_full_image_path),
+
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
@@ -149,11 +159,14 @@ export async function createTimeline() {
     }),
 
     a({
-      ...slider_trial_template,
+      ...image_trial_template,
       stimulus: "The bookshelf is devoid of books.",
-      post_stimulus_prompt: "How many books are on the bookshelf?",
-      labels: make_slider_labels_fill("bookshelf"),
       data: { condition_id: ["practice", "fill", "empty"] },
+      image_choices: _.mapObject({
+        "max": "_practice_bookshelf_full.jpg",
+        "min": "_practice_bookshelf_empty.jpg",
+      }, make_full_image_path),
+
       css_classes: ["jspsych-swarm-trial-practice"],
     }),
 
@@ -200,9 +213,10 @@ export async function createTimeline() {
         ...slider_trial_template
       };
     } else if (trial.measure == "forced_choice_images") {
+      const images = _.mapObject(trial.images, make_full_image_path);
       return {
         stimulus: trial.sentence,
-        image_choices: trial.images,
+        image_choices: images,
 
         data: trial_data,
         ...image_trial_template
@@ -211,6 +225,15 @@ export async function createTimeline() {
   }));
 
   timeline.push(a(trials.make_comments_block(COMPENSATION)));
+
+  // Preload images from all image forced choice trials
+  const all_images = timeline
+    .filter((t) => t.type == "html-image-response-with-copout")
+    .flatMap((t) => Object.values(t.image_choices));
+  timeline.unshift({
+    type: "preload",
+    images: all_images,
+  });
 
   return timeline;
 }

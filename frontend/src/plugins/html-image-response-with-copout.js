@@ -8,6 +8,8 @@
  *
  **/
 
+ const $ = window.jQuery;
+
 jsPsych.plugins["html-image-response-with-copout"] = (function() {
 
   var plugin = {};
@@ -61,6 +63,12 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
         description: 'If true, then trial will end when user responds.'
       },
 
+      activate_delay: {
+        type: jsPsych.plugins.parameterType.INT,
+        description: 'Duration (in ms) before images should appear and be clickable',
+        default: null,
+      },
+
       copout_text: {
         type: jsPsych.plugins.parameterType.STRING,
         pretty_name: "Cop-out text",
@@ -74,6 +82,7 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
   }
 
   plugin.trial = function(display_element, trial) {
+    display_element = $(display_element);
 
     const pre_stimulus_prompt = trial.pre_stimulus_prompt == null ? ""
       : `<div id="jspsych-html-image-response-pre-stimulus">${trial.pre_stimulus_prompt}</div>`;
@@ -86,7 +95,7 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
     }
     const buttons = options.map(([id, path]) =>
       `<div class="jspsych-html-image-response-button" data-choice="${id}">
-        <button class="jspsych-btn">
+        <button class="jspsych-btn" disabled="true">
           <img src="${path}" />
         </button>
       </div>`
@@ -104,16 +113,30 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
           ${buttons.join("\n")}
         </div>
       </div>`;
-    display_element.innerHTML = html;
+    display_element.html(html);
+
+    let enabled = false;
+
+    // add event listeners to buttons
+    display_element.find('.jspsych-html-image-response-button').click(() => {
+      if (!enabled) return;
+
+      const choice = $(this).data("choice");
+      after_response(choice);
+    });
+
+    const activate = () => {
+      enabled = true;
+      $('#jspsych-html-image-response-btngroup button').removeAttr('disabled');
+    };
+    if (trial.activate_delay) {
+      jsPsych.pluginAPI.setTimeout(activate, trial.activate_delay);
+    } else {
+      activate();
+    }
 
     // start time
     var start_time = performance.now();
-
-    // add event listeners to buttons
-    display_element.querySelector('.jspsych-html-image-response-button').addEventListener('click', function(e){
-      var choice = e.currentTarget.getAttribute('data-choice'); // don't use dataset for jsdom compatibility
-      after_response(choice);
-    });
 
     // store response
     var response = {
@@ -132,7 +155,7 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
 
       // after a valid response, the stimulus will have the CSS class 'responded'
       // which can be used to provide visual feedback that a response was recorded
-      display_element.querySelector('#jspsych-html-image-response-stimulus').className += ' responded';
+      display_element.find('#jspsych-html-image-response-stimulus').addClass("responded");
 
       // disable all the buttons after a response
       var btns = document.querySelectorAll('.jspsych-html-image-response-button button');
@@ -160,7 +183,7 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
       };
 
       // clear the display
-      display_element.innerHTML = '';
+      display_element.html("");
 
       // move on to the next trial
       jsPsych.finishTrial(trial_data);
@@ -169,7 +192,7 @@ jsPsych.plugins["html-image-response-with-copout"] = (function() {
     // hide image if timing is set
     if (trial.stimulus_duration !== null) {
       jsPsych.pluginAPI.setTimeout(function() {
-        display_element.querySelector('#jspsych-html-image-response-stimulus').style.visibility = 'hidden';
+        display_element.find('#jspsych-html-image-response-stimulus').css("visibility", "hidden");
       }, trial.stimulus_duration);
     }
 

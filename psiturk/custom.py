@@ -6,7 +6,7 @@ import re
 
 import logging
 
-from flask import Blueprint, jsonify, send_file, request
+from flask import Blueprint, jsonify, send_from_directory, request
 
 from psiturk.psiturk_config import PsiturkConfig
 from psiturk.user_utils import PsiTurkAuthorization
@@ -67,3 +67,8 @@ def get_trials_for_experiment(experiment: str):
     trials = renderer.get_trials(materials, materials_id, args=request.args)
 
     return jsonify(trials)
+
+
+@custom_code.route("/images/<path:path>")
+def get_image(path: Path):
+    return send_from_directory("/materials/images", path)

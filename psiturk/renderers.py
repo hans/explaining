@@ -672,7 +672,7 @@ class SprayLoadPilotRenderer(TrialRenderer):
         for image_key in ["image max", "image mid intention complete",
                           "image mid intention incomplete", "image min"]:
             if item.get(image_key) is not None:
-                dst = image_key.lstrip("image ").replace(" ", "_")
+                dst = image_key[len("image "):].replace(" ", "_")
                 trial["images"][dst] = item[image_key]
 
         return trial
@@ -864,8 +864,6 @@ class ComprehensionSprayLoadMeaningWithImagesRenderer(ComprehensionSprayLoadMean
         trial = super().build_trial(item, condition, materials_id)
 
         # If images are available for this trial, overwrite prompt usw.
-        from pprint import pprint
-        pprint(trial)
         if any(image is not None for image in trial["images"].values()):
             trial["prompt"] += "<br/>Pick the image which is best described by the sentence."
             trial["measure"] = "forced_choice_images"
@@ -876,6 +874,16 @@ class ComprehensionSprayLoadMeaningWithImagesRenderer(ComprehensionSprayLoadMean
 
     def get_exp_trials(self, materials):
         trials = super().get_exp_trials(materials)
-        # DEV HACK HACK DEV
-        trials = [t for t in trials if t["measure"] != "slider"]
+
+        # Make sure we begin with one image trial.
+        try:
+            image_trial_idx = \
+                next(i for i, trial in enumerate(trials)
+                     if trial["measure"] == "forced_choice_images")
+        except StopIteration:
+            pass
+        else:
+            image_trial = trials.pop(image_trial_idx)
+            trials = [image_trial] + trials
+
         return trials
