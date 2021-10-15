@@ -40,6 +40,16 @@ model <- lmer(slider_value ~
 summary(model)
 ```
 ```{r}
+ model2 <- lmer(slider_value ~
+                agent_is_given * agent_is_subject +
+                (agent_is_given * agent_is_subject|item_id) + 
+                (agent_is_given * agent_is_subject|uniqueid),
+              data=filtered_df %>% filter(`A concrete?` == TRUE),
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model2)
+```
+
+```{r}
 ranef(model)
 ```
 
@@ -56,9 +66,20 @@ model.brm <- brm(slider_value ~
                    (agent_is_given * agent_is_subject|item_id) + 
                    (agent_is_concrete * agent_is_given * agent_is_subject|uniqueid),
                  data=filtered_df_trans, family="beta",
-                 chains=4, cores=4)
+                 chains=4)
 ```
 ```{r}
 summary(model.brm)
 ```
+
+```{r}
+model2.brm <- brm(slider_value ~
+                   agent_is_given * agent_is_subject + 
+                   (agent_is_given * agent_is_subject|item_id) + 
+                   (agent_is_given * agent_is_subject|uniqueid),
+                 data=filtered_df_trans %>% filter(`A concrete?` == TRUE), family="beta",
+                 chains=4)
+summary(model2.brm)
+```
+
 
