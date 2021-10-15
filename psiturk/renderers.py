@@ -403,7 +403,7 @@ class AcceptabilityFillerMixin(object):
         all_trials = [{
             "item_id": trial["id"],
             "condition_id": ["filler", trial["rating"]],
-            "sentence": trial["sentence"],
+            "sentence": self.process_field(trial, "sentence"),
         } for trial in all_trials]
 
         random.shuffle(all_trials)
@@ -435,6 +435,44 @@ class AcceptabilitySwarmRenderer(SwarmNPPilotRenderer, AcceptabilityFillerMixin)
         condition_choices = [
             (0, 0),  # topic = a, subject = l
             (0, 1),  # topic = b, subject = a
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
+
+
+@register_trial_renderer("08_acceptability_swarm-withprefix")
+class AcceptabilitySwarmFullRenderer(AcceptabilityFillerMixin, SwarmAnaphorPilotRenderer):
+
+    TOTAL_NUM_TRIALS = 38
+    NUM_EXP_TRIALS = 18
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+
+        agent_is_given, agent_is_subject = condition
+        trial["sentences"] = [
+            trial["setup_clause"]["agent" if agent_is_given
+                                  else "location"].capitalize() + ".",
+            trial["critical_clause"]["agent" if agent_is_subject
+                                     else "location"].capitalize() + "."
+        ]
+        trial["sentence"] = "\n".join(trial["sentences"])
+
+        return trial
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # all possible sentence combinations
+        condition_choices = [
+            (0, 0),  # given = l, subject = l
+            (0, 1),  # given = l, subject = a
+            (1, 0),  # given = a, subject = l
+            (1, 1),  # given = a, subject = a
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
