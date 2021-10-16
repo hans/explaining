@@ -19,35 +19,29 @@ glimpse(df)
 ```
 
 ```{r}
-filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler")))
+filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler"))) %>% 
+  mutate(agent_is_concrete=`A concrete?`)
 ```
 
 ```{r}
 # contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
 contrasts(filtered_df$agent_is_subject) = c(-1, 1)
 contrasts(filtered_df$agent_is_given) = c(-1, 1)
-contrasts(filtered_df$`A concrete?`) = c(-1, 1)
+contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
 ```
 
 
 ```{r}
 model <- lmer(slider_value ~
-                `A concrete?` * agent_is_given * agent_is_subject +
+                agent_is_concrete * agent_is_given * agent_is_subject +
                 (agent_is_given * agent_is_subject|item_id) + 
-                (`A concrete?` * agent_is_given * agent_is_subject|uniqueid),
+                (agent_is_concrete * agent_is_given * agent_is_subject|uniqueid),
               data=filtered_df,
               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
 summary(model)
 ```
-```{r}
- model2 <- lmer(slider_value ~
-                agent_is_given * agent_is_subject +
-                (agent_is_given * agent_is_subject|item_id) + 
-                (agent_is_given * agent_is_subject|uniqueid),
-              data=filtered_df %>% filter(`A concrete?` == TRUE),
-              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
-summary(model2)
-```
+
+
 
 ```{r}
 ranef(model)
@@ -59,9 +53,8 @@ library(brms)
 
 ```{r}
 filtered_df_trans <- filtered_df %>% 
-  mutate(slider_value = (slider_value + 0.1) / 100.2,
-         agent_is_concrete=`A concrete?`)
-model.brm <- brm(slider_value ~
+  mutate(slider_value = (slider_value + 0.1) / 100.2)
+model.full.brm <- brm(slider_value ~
                    agent_is_concrete * agent_is_given * agent_is_subject + 
                    (agent_is_given * agent_is_subject|item_id) + 
                    (agent_is_concrete * agent_is_given * agent_is_subject|uniqueid),
@@ -69,17 +62,25 @@ model.brm <- brm(slider_value ~
                  chains=4)
 ```
 ```{r}
-summary(model.brm)
+summary(model.full.brm)
 ```
+## Visualizations
+
+Plot posterior predictive for slider responses conditioned on concreteness, construction, and givenness. Does not incorporate random effects.
+Uncertainty over response computed by combining the 95% posterior confidence interval estimates for each variable.
 
 ```{r}
-model2.brm <- brm(slider_value ~
-                   agent_is_given * agent_is_subject + 
-                   (agent_is_given * agent_is_subject|item_id) + 
-                   (agent_is_given * agent_is_subject|uniqueid),
-                 data=filtered_df_trans %>% filter(`A concrete?` == TRUE), family="beta",
-                 chains=4)
-summary(model2.brm)
-```
+# brms::conditional_effects(model.full.brm, effects="agent_is_subject:agent_is_given", conditions=data.frame(agent_is_concrete=c(F, T)), ask=F, points=T)
 
+# interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0--1)",
+#                        pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A", "L"), x.label="Construction",
+#                        modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A", "L"), legend.main="Given",
+#                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
+
+interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0–1)",
+                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("Bees are swarming", "The garden is swarming"), x.label="Construction",
+                       modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("Bees", "The garden"), legend.main="Given",
+                       mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
+ggsave("catplot_slider_concreteness-givenness-construction.png")
+```
 

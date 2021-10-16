@@ -8,6 +8,9 @@ output: html_notebook
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+
+# Visualization
+library(interactions)
 ```
 
 ```{r}
@@ -23,30 +26,27 @@ glimpse(df)
 ```{r}
 filtered_df <- df %>% 
   filter(!(condition_0 %in% c("filler"))) %>% 
-  mutate(agent_is_subject=survey_answer == "agent")
+  mutate(agent_is_subject=survey_answer == "agent",
+         agent_is_concrete=`A concrete?`)
 ```
 
 ```{r}
 contrasts(filtered_df$agent_is_given) = c(-1, 1)
-contrasts(filtered_df$`A concrete?`) = c(-1, 1)
+contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
 ```
 
 
 ```{r}
 # maximal random effects structure (stepped back from this because of failure to converge):
 # agent_is_subject ~ agent_is_given * `A concrete?` + (agent_is_given|item_id) + (agent_is_given * `A concrete?`|uniqueid)
-model <- glmer(agent_is_subject ~ agent_is_given * `A concrete?`
+model <- glmer(agent_is_subject ~ agent_is_given * agent_is_concrete
                                   + (agent_is_given|item_id)
-                                  + (agent_is_given + `A concrete?`|uniqueid),
+                                  + (agent_is_given + agent_is_concrete|uniqueid),
                family="binomial",control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
                data=filtered_df)
 summary(model)
 ```
 
-
-```{r}
-ranef(model)
-```
 
 ```{r}
 cbind(item_id=rownames(ranef(model)$item_id), ranef(model)$item_id) %>% 
@@ -57,4 +57,19 @@ cbind(item_id=rownames(ranef(model)$item_id), ranef(model)$item_id) %>%
     geom_boxplot()
 ```
 
+```{r}
+model.exp03.brm = brm(agent_is_subject ~ agent_is_given * agent_is_concrete
+                                          + (agent_is_given|item_id)
+                                          + (agent_is_given + agent_is_concrete|uniqueid),
+                      family="bernoulli", chains=4, data=filtered_df)
+```
+
+## Visualization
+
+```{r}
+cat_plot(model.exp03.brm, y.label="Probability of A-construction\n(Bees are swarming)",
+         pred="agent_is_given", pred.values=c(TRUE, FALSE), pred.labels=c("Agent", "Location"), x.label="Given entity",
+         modx=agent_is_concrete, modx.values=c(FALSE, TRUE), modx.labels=c("Abstract agent", "Concrete agent"), legend.main="Concreteness")
+ggsave("catplot_construction_givenness.png")
+```
 
