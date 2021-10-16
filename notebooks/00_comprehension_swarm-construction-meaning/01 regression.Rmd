@@ -54,7 +54,7 @@ summary(model.exp00.brm)
 
 ```{r}
 interactions::cat_plot(model.exp00.brm, y.label="Slider response value (0–1)",
-                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("Bees are swarming (A)", "The garden is swarming (L)"), x.label="Construction",
+                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A (Bees are swarming)", "L (The garden is swarming)"), x.label="Construction",
                        modx=agent_is_concrete, modx.values=c(FALSE, TRUE), modx.labels=c("Abstract agent", "Concrete agent"), legend.main="Concreteness")
                        #modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("Bees", "The garden"), legend.main="Given",
                        #mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))

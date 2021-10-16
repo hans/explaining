@@ -78,8 +78,8 @@ Uncertainty over response computed by combining the 95% posterior confidence int
 #                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
 
 interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0–1)",
-                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("Bees are swarming", "The garden is swarming"), x.label="Construction",
-                       modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("Bees", "The garden"), legend.main="Given",
+                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A\n(Bees are swarming)", "L\n(The garden is swarming)"), x.label="Construction",
+                       modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A (Bees)", "L (The garden)"), legend.main="Given entity",
                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
 ggsave("catplot_slider_concreteness-givenness-construction.png")
 ```

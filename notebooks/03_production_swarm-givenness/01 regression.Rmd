@@ -68,7 +68,7 @@ model.exp03.brm = brm(agent_is_subject ~ agent_is_given * agent_is_concrete
 
 ```{r}
 cat_plot(model.exp03.brm, y.label="Probability of A-construction\n(Bees are swarming)",
-         pred="agent_is_given", pred.values=c(TRUE, FALSE), pred.labels=c("Agent", "Location"), x.label="Given entity",
+         pred="agent_is_given", pred.values=c(TRUE, FALSE), pred.labels=c("Agent (Bees)", "Location (The garden)"), x.label="Given entity",
          modx=agent_is_concrete, modx.values=c(FALSE, TRUE), modx.labels=c("Abstract agent", "Concrete agent"), legend.main="Concreteness")
 ggsave("catplot_construction_givenness.png")
 ```
