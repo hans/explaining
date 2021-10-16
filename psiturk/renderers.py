@@ -127,11 +127,6 @@ class SwarmPilotRenderer(TrialRenderer):
             "preposition": item["P"],
             "prompt_preposition": item["prompt P"],
             "conjunction": item["conj"],
-
-            "agent_pronoun_subject": item["given A pron subj"],
-            "agent_pronoun_object": item["given A pron obj"],
-            "location_pronoun_subject": item["given L pron subj"],
-            "location_pronoun_object": item["given L pron obj"],
         }
 
         return trial
@@ -220,6 +215,13 @@ class SwarmAnaphorPilotRenderer(SwarmPilotRenderer):
 
     def build_trial(self, item, condition, materials_id):
         trial = super().build_trial(item, condition, materials_id)
+
+        trial.update({
+            "agent_pronoun_subject": item["given A pron subj"],
+            "agent_pronoun_object": item["given A pron obj"],
+            "location_pronoun_subject": item["given L pron subj"],
+            "location_pronoun_object": item["given L pron obj"],
+        })
 
         # prepare function for quickly processing item data
         p = functools.partial(self.process_field, item)
@@ -497,10 +499,10 @@ class ProductionSwarmGivennessRenderer(SwarmAnaphorPilotRenderer):
         trial["sentences"] = {
             "agent":
                 "".join([setup, ". ",
-                         trial["critical_clause"]["agent"], "."]),
+                         trial["critical_clause"]["agent"].capitalize(), "."]),
             "location":
                 "".join([setup, ". ",
-                         trial["critical_clause"]["location"], "."]),
+                         trial["critical_clause"]["location"].capitalize(), "."]),
         }
 
         return trial
