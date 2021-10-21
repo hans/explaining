@@ -26,6 +26,11 @@ RUN cd /frontend && \
 
 FROM cpllab/psiturk:3.2.0
 
+# Install inotify-tools to support file watching and auto-reload during
+# development
+RUN apt update && apt install -y inotify-tools \
+  && rm -rf /var/lib/apt/lists/*
+
 RUN pip install names simplejson
 
 COPY materials /materials
