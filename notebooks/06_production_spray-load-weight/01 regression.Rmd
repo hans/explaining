@@ -1,0 +1,55 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+```{r}
+df <- read_csv(
+  "merged_df.csv",
+  col_types = list(
+    uniqueid = col_factor(),
+    survey_answer = col_factor()
+  ))
+glimpse(df)
+```
+```{r}
+filtered_df <- df %>% 
+  filter(!(condition_0 %in% c("filler")))
+```
+
+```{r}
+# set up dummy contrast between baseline (no heavy) and interventions (theme heavy vs location heavy)
+# filtered_df <- filtered_df %>% mutate(heavy=if_else(theme_is_heavy, "theme", if_else(location_is_heavy, "location", "base")),
+#                                       heavy=factor(heavy, levels=c("base", "theme", "location")))
+filtered_df <- filtered_df %>% mutate(heavy=if_else(theme_is_heavy, 1, if_else(location_is_heavy, -1, 0)),
+                                      l_rat=if_else(theme_is_heavy, syllable_count_theme_heavy / syllable_count_location_light,
+                                                    if_else(location_is_heavy, syllable_count_theme_light / syllable_count_location_heavy, 
+                                                            syllable_count_theme_light / syllable_count_location_light)))
+```
+
+```{r}
+model <- glmer(theme_is_object ~ log(l_rat) 
+                                  + (log(l_rat)|item_id)
+                                  + (log(l_rat)|uniqueid),
+               family="binomial", control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
+               data=filtered_df)
+summary(model)
+```
+
+```{r}
+# maximal random effects structure (stepped back from this because of singular fits):
+# theme_is_object ~ theme_is_heavy + location_is_heavy + (theme_is_heavy + location_is_heavy|item_id) + (theme_is_heavy + location_is_heavy|uniqueid)
+model <- glmer(theme_is_object ~ heavy 
+                                  + (heavy|item_id)
+                                  + (heavy|uniqueid),
+               family="binomial", control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
+               data=filtered_df)
+summary(model)
+```
+

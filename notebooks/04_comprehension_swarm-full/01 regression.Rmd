@@ -20,12 +20,13 @@ glimpse(df)
 
 ```{r}
 filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler"))) %>% 
-  mutate(agent_is_concrete=`A concrete?`)
+  mutate(agent_is_concrete=`A concrete?`,
+         location_is_subject=!agent_is_subject)
 ```
 
 ```{r}
 # contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
-contrasts(filtered_df$agent_is_subject) = c(-1, 1)
+contrasts(filtered_df$location_is_subject) = c(-1, 1)
 contrasts(filtered_df$agent_is_given) = c(-1, 1)
 contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
 ```
@@ -33,9 +34,9 @@ contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
 
 ```{r}
 model <- lmer(slider_value ~
-                agent_is_concrete * agent_is_given * agent_is_subject +
-                (agent_is_given * agent_is_subject|item_id) + 
-                (agent_is_concrete * agent_is_given * agent_is_subject|uniqueid),
+                agent_is_concrete * agent_is_given * location_is_subject +
+                (agent_is_given * location_is_subject|item_id) + 
+                (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
               data=filtered_df,
               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
 summary(model)
@@ -55,9 +56,9 @@ library(brms)
 filtered_df_trans <- filtered_df %>% 
   mutate(slider_value = (slider_value + 0.1) / 100.2)
 model.full.brm <- brm(slider_value ~
-                   agent_is_concrete * agent_is_given * agent_is_subject + 
-                   (agent_is_given * agent_is_subject|item_id) + 
-                   (agent_is_concrete * agent_is_given * agent_is_subject|uniqueid),
+                   agent_is_concrete * agent_is_given * location_is_subject + 
+                   (agent_is_given * location_is_subject|item_id) + 
+                   (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
                  data=filtered_df_trans, family="beta",
                  chains=4)
 ```
@@ -78,9 +79,45 @@ Uncertainty over response computed by combining the 95% posterior confidence int
 #                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
 
 interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0–1)",
-                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A\n(Bees are swarming)", "L\n(The garden is swarming)"), x.label="Construction",
+                       pred=location_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("L\n(The garden is swarming)", "A\n(Bees are swarming)"), x.label="Construction",
                        modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A (Bees)", "L (The garden)"), legend.main="Given entity",
                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
 ggsave("catplot_slider_concreteness-givenness-construction.png")
 ```
+
+```{r}
+library(sjPlot)
+tab_model(model.full.brm)
+```
+
+
+## Fishing
+
+```{r}
+filtered_df_trans <- filtered_df %>% 
+  mutate(slider_value = (slider_value + 0.1) / 100.2) %>% 
+  filter(agent_is_concrete == TRUE)
+model.full.concrete.brm <- brm(slider_value ~
+                   agent_is_given * location_is_subject + 
+                   (agent_is_given * location_is_subject|item_id) + 
+                   (agent_is_given * location_is_subject|uniqueid),
+                 data=filtered_df_trans, family="beta",
+                 chains=4)
+```
+
+```{r}
+summary(model.full.concrete.brm)
+```
+
+```{r}
+concrete_df <- filtered_df %>% filter(agent_is_concrete == T)
+model <- lmer(slider_value ~
+                agent_is_given * location_is_subject +
+                (agent_is_given * location_is_subject|item_id) + 
+                (agent_is_given * location_is_subject|uniqueid),
+              data=concrete_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model)
+```
+
 

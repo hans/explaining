@@ -72,4 +72,8 @@ cat_plot(model.exp03.brm, y.label="Probability of A-construction\n(Bees are swar
          modx=agent_is_concrete, modx.values=c(FALSE, TRUE), modx.labels=c("Abstract agent", "Concrete agent"), legend.main="Concreteness")
 ggsave("catplot_construction_givenness.png")
 ```
+```{r}
+library(sjPlot)
+tab_model(model.exp03.brm)
+```
 

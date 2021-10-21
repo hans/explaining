@@ -19,14 +19,15 @@ glimpse(df)
 ```
 ```{r}
 filtered_df <- df %>% filter(!slider_copout, !(condition_0 %in% c("practice", "filler"))) %>% 
-  mutate(agent_is_concrete=`A concrete?`)
-contrasts(filtered_df$agent_is_subject) = c(-1, 1)
+  mutate(agent_is_concrete=`A concrete?`,
+         location_is_subject=!agent_is_subject)
+contrasts(filtered_df$location_is_subject) = c(-1, 1)
 contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
 ```
 
 
 ```{r}
-model <- lmer(slider_value ~ agent_is_subject * agent_is_concrete + (1|item_id) + (agent_is_subject * agent_is_concrete|uniqueid),
+model <- lmer(slider_value ~ location_is_subject * agent_is_concrete + (1|item_id) + (agent_is_subject * agent_is_concrete|uniqueid),
               data=filtered_df)
 summary(model)
 ```
@@ -41,9 +42,9 @@ library(brms)
 ```{r}
 filtered_df_trans <- filtered_df %>% 
   mutate(slider_value = (slider_value + 0.1) / 100.2)
-model.exp00.brm <- brm(slider_value ~ agent_is_subject * agent_is_concrete
-                                      + (agent_is_subject|item_id)
-                                      + (agent_is_subject * agent_is_concrete|uniqueid),
+model.exp00.brm <- brm(slider_value ~ location_is_subject * agent_is_concrete
+                                      + (location_is_subject|item_id)
+                                      + (location_is_subject * agent_is_concrete|uniqueid),
                        data=filtered_df_trans, family="beta")
 ```
 ```{r}
@@ -54,7 +55,7 @@ summary(model.exp00.brm)
 
 ```{r}
 interactions::cat_plot(model.exp00.brm, y.label="Slider response value (0–1)",
-                       pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A (Bees are swarming)", "L (The garden is swarming)"), x.label="Construction",
+                       pred=location_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("L (The garden is swarming)", "A (Bees are swarming)"), x.label="Construction",
                        modx=agent_is_concrete, modx.values=c(FALSE, TRUE), modx.labels=c("Abstract agent", "Concrete agent"), legend.main="Concreteness")
                        #modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("Bees", "The garden"), legend.main="Given",
                        #mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
