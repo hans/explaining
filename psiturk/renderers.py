@@ -89,15 +89,19 @@ def register_trial_renderer(experiment_name):
 
 class SwarmPilotRenderer(TrialRenderer):
 
+    # Drop materials items which have empty values for any of these fields.
+    required_nonempty_fields = ["A", "L", "V", "P", "prompt P", "L det",
+                                "topic A", "topic L", "conj"]
+
     def _filter_materials(self, materials):
         # drop any materials marked for exclusion
-        items = [item for item in materials["items"] if not item["exclude"]]
+        items = [item for item in materials["items"]
+                 if not item.get("exclude", False)]
 
         # drop materials with missing fields
-        critical_fields = ["A", "L", "V", "P", "prompt P", "L det",
-                           "topic A", "topic L", "conj"]
         items = [item for item in items
-                 if not any(not item[field] for field in critical_fields)]
+                 if not any(not item[field]
+                 for field in self.required_nonempty_fields)]
         return items
 
     def _filter_and_sample_materials(self, materials):
@@ -200,18 +204,11 @@ class SwarmAnaphorPilotRenderer(SwarmPilotRenderer):
     clause uses swarm-alternation with pronoun for established referent
     """
 
-    def _filter_materials(self, materials):
-        # drop any materials marked for exclusion
-        items = [item for item in materials["items"] if not item["exclude"]]
-
-        # drop materials with missing fields
-        critical_fields = ["A", "L", "V", "P", "prompt P", "L det",
-                           "given A", "given L", "given A pron subj",
-                           "given A pron obj", "given L pron subj",
-                           "given L pron obj"]
-        items = [item for item in items
-                 if not any(not item[field] for field in critical_fields)]
-        return items
+    required_nonempty_fields = SwarmPilotRenderer.required_nonempty_fields + \
+        ["A", "L", "V", "P", "prompt P", "L det",
+         "given A", "given L", "given A pron subj",
+         "given A pron obj", "given L pron subj",
+         "given L pron obj"]
 
     def build_trial(self, item, condition, materials_id):
         trial = super().build_trial(item, condition, materials_id)
@@ -612,6 +609,85 @@ class ComprehensionSwarmFullRenderer(SwarmAnaphorPilotRenderer):
             (0, 1),  # given = l, subject = a
             (1, 0),  # given = a, subject = l
             (1, 1),  # given = a, subject = a
+        ]
+
+        trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)
+
+        trials = [self.build_trial(item, condition, materials["name"])
+                  for item, condition in zip(items, trial_conditions)]
+        return trials
+
+
+@register_trial_renderer("09_comprehension_swarm-full-nonalternating-control")
+class ComprehensionSwarmFullWithNonAlternatingControlRenderer(
+  ComprehensionSwarmFullRenderer):
+
+    required_nonempty_fields = \
+        ComprehensionSwarmFullRenderer.required_nonempty_fields + \
+        ["non alternating given A", "non alternating given A.P",
+         "non alternating given L"]
+
+    def build_trial(self, item, condition, materials_id):
+        trial = super().build_trial(item, condition, materials_id)
+        agent_is_given, agent_is_subject = condition
+
+        if agent_is_given:
+            trial["critical_clause"]["nonalternating"] = " ".join([
+                trial["agent_pronoun_subject"],
+                "are" if trial["agent_plural"] else "is",
+                item["non alternating given A"],
+                item["non alternating given A.P"],
+                trial["location_determiner"],
+                trial["location"],
+            ])
+        else:
+            trial["critical_clause"]["nonalternating"] = " ".join([
+                item["non alternating given L.det"] + " " \
+                    if item["non alternating given L.det"] else "",
+                trial["agent"],
+                "are" if trial["agent_plural"] else "is",
+                item["non alternating given A"],
+                item["non alternating given L"],
+            ]).strip()
+
+        trial["sentences"] = [
+            trial["setup_clause"]["agent" if agent_is_given
+                                  else "location"].capitalize() + "."
+        ]
+
+        critical_clause = None
+        if agent_is_subject == 0:
+            critical_clause = trial["critical_clause"]["location"]
+        elif agent_is_subject == 1:
+            critical_clause = trial["critical_clause"]["agent"]
+        elif agent_is_subject == 2:
+            critical_clause = trial["critical_clause"]["nonalternating"]
+        trial["sentences"].append(critical_clause.capitalize() + ".")
+
+        trial["prompt"] = " ".join([
+            "How", "many" if trial["agent_plural"] else "much",
+            trial["agent"],
+            "are" if trial["agent_plural"] else "is",
+            trial["prompt_preposition"],
+            trial["location_determiner"],
+            trial["location"]
+        ]) + "?"
+
+        return trial
+
+    def get_exp_trials(self, materials):
+        items = self._filter_and_sample_materials(materials)
+
+        # sample random subject settings for each item
+        # topic manipulation is not relevant here -- we'll just set to
+        # zero = location. Not actually used by our `build_trial`.
+        condition_choices = [
+            (0, 0),  # given = l, subject = l
+            (0, 1),  # given = l, subject = a
+            (1, 0),  # given = a, subject = l
+            (1, 1),  # given = a, subject = a
+            (0, 2),  # given = l, nonalternating
+            (1, 2),  # given = a, nonalternating
         ]
 
         trial_conditions = random.choices(condition_choices, k=self.NUM_EXP_TRIALS)

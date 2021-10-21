@@ -7,6 +7,8 @@ import "jspsych/plugins/jspsych-survey-text";
 import "jspsych/plugins/jspsych-survey-multi-choice";
 import "./plugins/html-slider-response-with-copout";
 
+import { get_trials } from './materials';
+
 
 export function add_data_fields(trial_object, data_fields) {
   trial_object = {
@@ -138,3 +140,145 @@ export const acceptability_intro_sequence = [
     ],
   }
 ]
+
+const swarm_slider_trial_template = {
+  type: "html-slider-response-with-copout",
+  pre_stimulus_prompt: "Please read the following sentence:",
+  copout_text: "This sentence doesn't make sense to me.",
+  labels: ["0% / none", "100% / as much/many as there possibly could be"],
+  require_movement: true,
+};
+
+export function createFullSwarmComprehensionTimeline(experiment_name, materials_seq, compensation) {
+  // Helper function to add experiment ID to block spec
+  const a = (block) => add_data_fields(block, { experiment_id: experiment_name });
+
+  return async () => {
+    const trial_materials = await get_trials(experiment_name, materials_seq);
+
+    let timeline = [];
+
+    timeline.push(a(age_block));
+    timeline.push(a(demo_block));
+
+    timeline = timeline.concat([
+      {
+        type: "instructions",
+        show_clickable_nav: true,
+        pages: [
+          `
+          <p class="jspsych-instructions">
+            Welcome! In this experiment, you will help us research how
+            <strong>English speakers understand the meanings of different
+            words and phrases</strong>.
+          </p>
+
+          <p class="jspsych-instructions">
+            On each page, we'll ask you to <strong>imagine the scene described
+            by an English passage</strong>, and to share your best guess about how
+            that scene looks.
+          </p>
+          `,
+
+          `
+          <p class="jspsych-instructions">
+            Let's begin with some practice items.
+          </p>
+
+          <p class="jspsych-instructions">
+            On the next pages, you'll read some sentences describing a real-world
+            scene.
+          </p>
+
+          <p class="jspsych-instructions">
+            Your job is to share your best guess about <strong>how full</strong>
+            some object is in the scene, possibly in an abstract sense.
+          </p>
+
+          <p class="jspsych-instructions">
+            If the particular sentence does not make sense to you, you can click
+            the checkbox <em>"This sentence doesn't make sense to me."</em> to
+            proceed to the next page.
+          </p>
+          `,
+        ],
+      },
+
+      a({
+        ...swarm_slider_trial_template,
+        stimulus: "Joe marveled at the bookshelf. It is chock-full of books.",
+        post_stimulus_prompt: "How many books are on the bookshelf?",
+        data: { condition_id: ["practice", "solid", "full"] },
+        css_classes: ["jspsych-swarm-trial-practice"],
+      }),
+
+      a({
+        ...swarm_slider_trial_template,
+        stimulus: "The pool is starting to overflow.",
+        post_stimulus_prompt: "How much water is in the pool?",
+        data: { condition_id: ["practice", "liquid", "full"] },
+        css_classes: ["jspsych-swarm-trial-practice"],
+      }),
+
+      a({
+        ...swarm_slider_trial_template,
+        stimulus: "Everyone agreed that there was very little passion in the music.",
+        post_stimulus_prompt: "How much passion was in the music?",
+        data: { condition_id: ["practice", "abstract", "empty"] },
+        css_classes: ["jspsych-swarm-trial-practice"],
+      }),
+
+      a({
+        ...swarm_slider_trial_template,
+        stimulus: "The books are missing from the bookshelf.",
+        post_stimulus_prompt: "How many books are on the bookshelf?",
+        data: { condition_id: ["practice", "solid", "empty"] },
+        css_classes: ["jspsych-swarm-trial-practice"],
+      }),
+
+      a({
+        ...swarm_slider_trial_template,
+        stimulus:
+          `The future of the company was at stake.` +
+          ` Everyone at the meeting felt anxiety about it.`,
+        post_stimulus_prompt: "How much anxiety was at the meeting?",
+        data: { condition_id: ["practice", "abstract", "full"] },
+        css_classes: ["jspsych-swarm-trial-practice"],
+      }),
+
+      {
+        type: "instructions",
+        show_clickable_nav: true,
+        pages: [
+          `
+          <p class="jspsych-instructions">
+            Good work! The experiment will now begin.
+          </p>
+          `
+        ]
+      }
+    ]);
+
+    // Prepare main experimental trials.
+    timeline = timeline.concat(_.map(trial_materials.trials, (trial) => {
+      return {
+        stimulus: trial.sentences.join("<br/>"),
+        post_stimulus_prompt: trial.prompt,
+
+        data: {
+          experiment_id: experiment_name,
+          materials_id: trial.materials_id,
+          item_id: trial.item_id,
+          condition_id: trial.condition_id,
+          stim_sentences: trial.sentences,
+        },
+
+        ...swarm_slider_trial_template
+      }
+    }));
+
+    timeline.push(a(make_comments_block(compensation)));
+
+    return timeline;
+  }
+}
