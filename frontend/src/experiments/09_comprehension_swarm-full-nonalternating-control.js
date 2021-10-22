@@ -22,7 +22,7 @@ import * as trials from "../trials";
 import { default_on_finish, default_on_data_update } from "../psiturk";
 
 const EXPERIMENT_NAME = "09_comprehension_swarm-full-nonalternating-control";
-const MATERIALS_HASH = "swarm-005-nonalternating";
+const MATERIALS_HASH = "swarm-006-nonalternating-natural";
 const FILLERS_HASH = "fillers/swarm_comprehension-000-base";
 
 const MATERIALS_SEQ = [MATERIALS_HASH, FILLERS_HASH];

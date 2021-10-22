@@ -631,6 +631,8 @@ class ComprehensionSwarmFullWithNonAlternatingControlRenderer(
         trial = super().build_trial(item, condition, materials_id)
         agent_is_given, agent_is_subject = condition
 
+        p = functools.partial(self.process_field, item)
+
         if agent_is_given:
             trial["critical_clause"]["nonalternating"] = " ".join([
                 trial["agent_pronoun_subject"],
@@ -642,7 +644,7 @@ class ComprehensionSwarmFullWithNonAlternatingControlRenderer(
             ])
         else:
             trial["critical_clause"]["nonalternating"] = " ".join([
-                item["non alternating given L.det"] + " " \
+                p("non alternating given L.det")
                     if item["non alternating given L.det"] else "",
                 trial["agent"],
                 "are" if trial["agent_plural"] else "is",
