@@ -1,0 +1,160 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Preliminaries
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+```{r}
+df <- read_csv(
+  "merged_df.csv",
+  col_types = list(
+    uniqueid = col_factor()
+  ))
+glimpse(df)
+```
+
+```{r}
+filtered_df <- df %>%
+  filter(!slider_copout, 
+         !(condition_0 %in% c("practice", "filler")),
+         !is_nonalternating_control) %>% 
+  mutate(agent_is_concrete=`A concrete?`,
+         location_is_subject=!agent_is_subject)
+```
+
+## Main regression
+
+```{r}
+# contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
+contrasts(filtered_df$location_is_subject) = c(-1, 1)
+contrasts(filtered_df$agent_is_given) = c(-1, 1)
+contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
+```
+
+
+```{r}
+model <- lmer(slider_value ~
+                agent_is_concrete * agent_is_given * location_is_subject +
+                (agent_is_given * location_is_subject|item_id) + 
+                (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
+              data=filtered_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model)
+```
+
+
+
+```{r}
+ranef(model)
+```
+
+### Bayesian
+```{r}
+library(brms)
+```
+
+```{r}
+filtered_df_trans <- filtered_df %>% 
+  mutate(slider_value = (slider_value + 0.1) / 100.2)
+model.full.brm <- brm(slider_value ~
+                   agent_is_concrete * agent_is_given * location_is_subject + 
+                   (agent_is_given * location_is_subject|item_id) + 
+                   (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
+                 data=filtered_df_trans, family="beta",
+                 chains=4)
+```
+```{r}
+summary(model.full.brm)
+```
+## Visualizations
+
+Plot posterior predictive for slider responses conditioned on concreteness, construction, and givenness. Does not incorporate random effects.
+Uncertainty over response computed by combining the 95% posterior confidence interval estimates for each variable.
+
+```{r}
+# brms::conditional_effects(model.full.brm, effects="agent_is_subject:agent_is_given", conditions=data.frame(agent_is_concrete=c(F, T)), ask=F, points=T)
+
+# interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0--1)",
+#                        pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A", "L"), x.label="Construction",
+#                        modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A", "L"), legend.main="Given",
+#                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
+
+interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0–1)",
+                       pred=location_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("L\n(The garden is swarming)", "A\n(Bees are swarming)"), x.label="Construction",
+                       modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A (Bees)", "L (The garden)"), legend.main="Given entity",
+                       mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
+ggsave("catplot_slider_concreteness-givenness-construction.png")
+```
+
+```{r}
+library(sjPlot)
+tab_model(model.full.brm)
+```
+
+## Control analysis with non-alternating verbs
+
+
+```{r}
+control_df <- df %>%
+  filter(is_nonalternating_control,
+         !slider_copout, 
+         !(condition_0 %in% c("practice", "filler"))) %>% 
+  mutate(agent_is_concrete=`A concrete?`,
+         location_is_subject=!agent_is_subject)
+```
+
+```{r}
+# contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
+contrasts(control_df$agent_is_given) = c(-1, 1)
+contrasts(control_df$agent_is_concrete) = c(-1, 1)
+```
+
+
+```{r}
+model <- lmer(slider_value ~
+                agent_is_concrete * agent_is_given +
+                (agent_is_given|item_id) + 
+                (agent_is_concrete * agent_is_given|uniqueid),
+              data=control_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model)
+```
+
+
+## Fishing
+
+```{r}
+filtered_df_trans <- filtered_df %>% 
+  mutate(slider_value = (slider_value + 0.1) / 100.2) %>% 
+  filter(agent_is_concrete == TRUE)
+model.full.concrete.brm <- brm(slider_value ~
+                   agent_is_given * location_is_subject + 
+                   (agent_is_given * location_is_subject|item_id) + 
+                   (agent_is_given * location_is_subject|uniqueid),
+                 data=filtered_df_trans, family="beta",
+                 chains=4)
+```
+
+```{r}
+summary(model.full.concrete.brm)
+```
+
+```{r}
+concrete_df <- filtered_df %>% filter(agent_is_concrete == T)
+model <- lmer(slider_value ~
+                agent_is_given * location_is_subject +
+                (agent_is_given * location_is_subject|item_id) + 
+                (agent_is_given * location_is_subject|uniqueid),
+              data=concrete_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model)
+```
+
+
