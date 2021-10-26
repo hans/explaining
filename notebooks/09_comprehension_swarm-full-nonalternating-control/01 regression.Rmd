@@ -9,6 +9,7 @@ output: html_notebook
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+library(ggbeeswarm)
 ```
 
 ```{r}
@@ -40,20 +41,16 @@ contrasts(filtered_df$agent_is_concrete) = c(-1, 1)
 
 
 ```{r}
-model <- lmer(slider_value ~
-                agent_is_concrete * agent_is_given * location_is_subject +
-                (agent_is_given * location_is_subject|item_id) + 
-                (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
-              data=filtered_df,
-              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
-summary(model)
+model.09.main <-
+  lmer(slider_value ~
+       agent_is_concrete * agent_is_given * location_is_subject +
+       (agent_is_given * location_is_subject|item_id) + 
+       (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
+       data=filtered_df,
+      control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model.09.main)
 ```
 
-
-
-```{r}
-ranef(model)
-```
 
 ### Bayesian
 ```{r}
@@ -63,7 +60,7 @@ library(brms)
 ```{r}
 filtered_df_trans <- filtered_df %>% 
   mutate(slider_value = (slider_value + 0.1) / 100.2)
-model.full.brm <- brm(slider_value ~
+model.09.main.brm <- brm(slider_value ~
                    agent_is_concrete * agent_is_given * location_is_subject + 
                    (agent_is_given * location_is_subject|item_id) + 
                    (agent_is_concrete * agent_is_given * location_is_subject|uniqueid),
@@ -71,31 +68,45 @@ model.full.brm <- brm(slider_value ~
                  chains=4)
 ```
 ```{r}
-summary(model.full.brm)
+summary(model.09.main.brm)
 ```
 ## Visualizations
+
+### Plot raw results, but subtracting random effects
+
+```{r}
+# Predict random effects for each observation.
+ranef_obs = predict(model.09.main, random.only=T)
+
+filtered_df_controlled = filtered_df %>% 
+  cbind(ranef_obs) %>% 
+  mutate(slider_value_ranef_normed = slider_value - ranef_obs)
+
+filtered_df_controlled %>%
+  ggplot(aes(x=agent_is_concrete, y=slider_value_ranef_normed, color=agent_is_given)) +
+  geom_boxplot() +
+  geom_quasirandom(dodge.width=0.75, alpha=0.3)
+```
+
+
+### Conditional effects plots
 
 Plot posterior predictive for slider responses conditioned on concreteness, construction, and givenness. Does not incorporate random effects.
 Uncertainty over response computed by combining the 95% posterior confidence interval estimates for each variable.
 
 ```{r}
-# brms::conditional_effects(model.full.brm, effects="agent_is_subject:agent_is_given", conditions=data.frame(agent_is_concrete=c(F, T)), ask=F, points=T)
+# brms::conditional_effects(model.09.main.brm, effects="agent_is_subject:agent_is_given", conditions=data.frame(agent_is_concrete=c(F, T)), ask=F, points=T)
 
-# interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0--1)",
+# interactions::cat_plot(model.09.main.brm, geom="line", y.label="Slider response value (0--1)",
 #                        pred=agent_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("A", "L"), x.label="Construction",
 #                        modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A", "L"), legend.main="Given",
 #                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
 
-interactions::cat_plot(model.full.brm, geom="line", y.label="Slider response value (0–1)",
+interactions::cat_plot(model.09.main.brm, geom="line", y.label="Slider response value (0–1)",
                        pred=location_is_subject, pred.values=c(TRUE, FALSE), pred.labels=c("L\n(The garden is swarming)", "A\n(Bees are swarming)"), x.label="Construction",
                        modx=agent_is_given, modx.values=c(TRUE, FALSE), modx.labels=c("A (Bees)", "L (The garden)"), legend.main="Given entity",
                        mod2=agent_is_concrete, mod2.values=c(FALSE, TRUE), mod2.labels=c("Abstract agent", "Concrete agent"))
 ggsave("catplot_slider_concreteness-givenness-construction.png")
-```
-
-```{r}
-library(sjPlot)
-tab_model(model.full.brm)
 ```
 
 ## Control analysis with non-alternating verbs
@@ -111,6 +122,12 @@ control_df <- df %>%
 ```
 
 ```{r}
+# Check: how much data per item--condition?
+control_df %>% group_by(AV, condition_0) %>% summarise(n=n()) %>% arrange(n)
+```
+
+
+```{r}
 # contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
 contrasts(control_df$agent_is_given) = c(-1, 1)
 contrasts(control_df$agent_is_concrete) = c(-1, 1)
@@ -118,13 +135,14 @@ contrasts(control_df$agent_is_concrete) = c(-1, 1)
 
 
 ```{r}
-model <- lmer(slider_value ~
+model.09.control <-
+  lmer(slider_value ~
                 agent_is_concrete * agent_is_given +
                 (agent_is_given|item_id) + 
                 (agent_is_concrete * agent_is_given|uniqueid),
               data=control_df,
               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
-summary(model)
+summary(model.09.control)
 ```
 
 
@@ -134,7 +152,7 @@ summary(model)
 filtered_df_trans <- filtered_df %>% 
   mutate(slider_value = (slider_value + 0.1) / 100.2) %>% 
   filter(agent_is_concrete == TRUE)
-model.full.concrete.brm <- brm(slider_value ~
+model.09.concrete.brm <- brm(slider_value ~
                    agent_is_given * location_is_subject + 
                    (agent_is_given * location_is_subject|item_id) + 
                    (agent_is_given * location_is_subject|uniqueid),
@@ -143,18 +161,30 @@ model.full.concrete.brm <- brm(slider_value ~
 ```
 
 ```{r}
-summary(model.full.concrete.brm)
+summary(model.09.concrete.brm)
 ```
 
 ```{r}
 concrete_df <- filtered_df %>% filter(agent_is_concrete == T)
-model <- lmer(slider_value ~
+model.09.concrete <- lmer(slider_value ~
                 agent_is_given * location_is_subject +
                 (agent_is_given * location_is_subject|item_id) + 
                 (agent_is_given * location_is_subject|uniqueid),
               data=concrete_df,
               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
-summary(model)
+summary(model.09.concrete)
 ```
 
+```{r}
+ranef_obs_concrete = predict(model.09.concrete, random.only=T)
+
+filtered_df_concrete_controlled = concrete_df %>% 
+  cbind(ranef_obs_concrete) %>% 
+  mutate(slider_value_ranef_normed = slider_value - ranef_obs_concrete)
+
+filtered_df_concrete_controlled %>%
+  ggplot(aes(x=location_is_subject, y=slider_value_ranef_normed, color=agent_is_given)) +
+  geom_boxplot() +
+  geom_quasirandom(dodge.width=0.75, alpha=0.3)
+```
 

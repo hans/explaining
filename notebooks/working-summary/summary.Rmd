@@ -1,0 +1,124 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lmerTest)
+library(brms)
+library(ggbeeswarm)
+```
+
+## Background
+
+### The *swarm* construction
+
+## Experiments
+
+### The *swarm* construction
+
+TODO document and visualize subject exclusion criteria
+
+```{r}
+swarm_df.04 <- read_csv("../04_comprehension_swarm-full/merged_df.csv")
+swarm_df.09 <- read_csv("../09_comprehension_swarm-full-nonalternating-control/merged_df.csv")
+swarm_df <- bind_rows(swarm_df.04, swarm_df.09) %>% 
+  filter(
+    # Exclude practice and filler trials.
+    !condition_0 %in% c("practice", "filler"),
+    
+    # Exclude trials from control experiment.
+    !is_nonalternating_control,
+    
+    # Exclude trials on which subjects refused to answer.
+    !slider_copout,
+    
+    # Retain only concrete items.
+    `A concrete?`) %>% 
+  mutate(
+    # Switch coding to make model interpretation a little more intuitive (both
+    # main effects should point in the same direction).
+    location_is_subject = !agent_is_subject,
+    
+    # Scale slider_value to range on (0, 1) in order to be compatible with
+    # beta regression model.
+    slider_value = (0.001 + slider_value) / 100.002)
+
+glimpse(swarm_df)
+```
+
+```{r}
+# Sum-code all logical variables.
+contrasts(swarm_df$location_is_subject) = c(-1, 1)
+contrasts(swarm_df$agent_is_given) = c(-1, 1)
+```
+
+#### Model fits
+
+```{r}
+# Fit a mixed-effects linear regression with maximal random effect structure.
+swarm_model.linear <- 
+  lmer(slider_value ~
+       agent_is_given * location_is_subject +
+       (agent_is_given * location_is_subject|item_id) + 
+       (agent_is_given * location_is_subject|uniqueid),
+       data=swarm_df,
+      control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+```
+```{r}
+summary(swarm_model.linear)
+```
+
+
+
+```{r}
+# Fit a mixed-effects beta regression with maximal random effect structure.
+swarm_model <- brm(slider_value ~
+                   agent_is_given * location_is_subject + 
+                   (agent_is_given * location_is_subject|item_id) + 
+                   (agent_is_given * location_is_subject|uniqueid),
+                 data=swarm_df, family="beta", chains=4)
+```
+
+```{r}
+summary(swarm_model)
+```
+
+#### Visualizations
+
+##### Plot raw results, but subtracting random effects
+
+```{r}
+# Predict random effects for each observation.
+# NB brms doesn't support making posterior predictions with ranefs only. So
+# I'm lazily using linear model's estimates for now instead, for this
+# visualization.
+swarm_ranef_obs = predict(swarm_model.linear, random.only=T)
+
+swarm_df_controlled = swarm_df %>% 
+  cbind(swarm_ranef_obs) %>% 
+  mutate(slider_value_ranef_normed = slider_value - swarm_ranef_obs)
+
+swarm_df_controlled %>%
+  ggplot(aes(x=location_is_subject, y=slider_value_ranef_normed, color=agent_is_given)) +
+  geom_boxplot() +
+  geom_quasirandom(dodge.width=0.75, alpha=0.3) +
+  
+  ggtitle("Slider responses, normalized using random effect estimates") +
+  labs(y="Normalized slider value")
+```
+
+
+##### Conditional effects plots
+
+Plot posterior predictive for slider responses conditioned on construction and givenness. Does not incorporate random effects.
+Uncertainty over response computed by combining the 95% posterior confidence interval estimates for each variable.
+
+```{r}
+# brms::conditional_effects(model.09.main.brm, effects="agent_is_subject:agent_is_given", conditions=data.frame(agent_is_concrete=c(F, T)), ask=F, points=T)
+
+interactions::cat_plot(swarm_model, geom="line", y.label="Slider response value (0–1)",
+                       pred=location_is_subject, pred.values=c(FALSE, TRUE), pred.labels=c("A\n(Bees are swarming)", "L\n(The garden is swarming)"), x.label="Construction",
+                       modx=agent_is_given, modx.values=c(FALSE, TRUE), modx.labels=c("L (The garden)", "A (Bees)"), legend.main="Given entity")
+```
