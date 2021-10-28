@@ -83,9 +83,10 @@ filtered_df_controlled = filtered_df %>%
   mutate(slider_value_ranef_normed = slider_value - ranef_obs)
 
 filtered_df_controlled %>%
-  ggplot(aes(x=agent_is_concrete, y=slider_value_ranef_normed, color=agent_is_given)) +
+  ggplot(aes(x=location_is_subject, y=slider_value_ranef_normed, color=agent_is_given)) +
   geom_boxplot() +
-  geom_quasirandom(dodge.width=0.75, alpha=0.3)
+  geom_quasirandom(dodge.width=0.75, alpha=0.3) +
+  facet_grid(~agent_is_concrete)
 ```
 
 
@@ -118,8 +119,14 @@ control_df <- df %>%
          !slider_copout, 
          !(condition_0 %in% c("practice", "filler"))) %>% 
   mutate(agent_is_concrete=`A concrete?`,
-         location_is_subject=!agent_is_subject)
+         location_is_subject=!agent_is_subject,
+         nonalternating_predicate=`non alternating given A`)
 ```
+
+```{r}
+glimpse(control_df)
+```
+
 
 ```{r}
 # Check: how much data per item--condition?
@@ -138,15 +145,20 @@ contrasts(control_df$agent_is_concrete) = c(-1, 1)
 model.09.control <-
   lmer(slider_value ~
                 agent_is_concrete * agent_is_given +
-                (agent_is_given|item_id) + 
+                (agent_is_given|nonalternating_predicate/item_id) + 
                 (agent_is_concrete * agent_is_given|uniqueid),
               data=control_df,
               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
 summary(model.09.control)
 ```
 
+```{r}
+ranef(model.09.control)
+```
 
 ## Fishing
+
+### Bayesian
 
 ```{r}
 filtered_df_trans <- filtered_df %>% 
@@ -164,6 +176,8 @@ model.09.concrete.brm <- brm(slider_value ~
 summary(model.09.concrete.brm)
 ```
 
+### lmer
+
 ```{r}
 concrete_df <- filtered_df %>% filter(agent_is_concrete == T)
 model.09.concrete <- lmer(slider_value ~
@@ -175,16 +189,66 @@ model.09.concrete <- lmer(slider_value ~
 summary(model.09.concrete)
 ```
 
+#### Control analysis on concrete only
+
 ```{r}
-ranef_obs_concrete = predict(model.09.concrete, random.only=T)
+control_concrete_df <- df %>%
+  filter(is_nonalternating_control,
+         `A concrete?`,
+         !slider_copout, 
+         !(condition_0 %in% c("practice", "filler"))) %>% 
+  mutate(location_is_subject=!agent_is_subject,
+         nonalternating_predicate=`non alternating given A`)
+```
 
-filtered_df_concrete_controlled = concrete_df %>% 
-  cbind(ranef_obs_concrete) %>% 
-  mutate(slider_value_ranef_normed = slider_value - ranef_obs_concrete)
+```{r}
+glimpse(control_concrete_df)
+```
 
-filtered_df_concrete_controlled %>%
-  ggplot(aes(x=location_is_subject, y=slider_value_ranef_normed, color=agent_is_given)) +
-  geom_boxplot() +
-  geom_quasirandom(dodge.width=0.75, alpha=0.3)
+
+```{r}
+# Check: how much data per item--condition?
+control_concrete_df %>% group_by(AV, condition_0) %>% summarise(n=n()) %>% arrange(n)
+```
+
+
+```{r}
+# contr.sum with logical variables makes FALSE = 1, TRUE = -1, which is confusing.
+contrasts(control_concrete_df$agent_is_given) = c(-1, 1)
+```
+
+
+```{r}
+model.09.control.concrete <-
+  lmer(slider_value ~
+                agent_is_given +
+                (agent_is_given|nonalternating_predicate/item_id) + 
+                (agent_is_given|uniqueid),
+              data=control_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(model.09.control.concrete)
+```
+```{r}
+ranef(model.09.control.concrete)
+```
+```{r, eval=F}
+item_ranef_estimates = ranef(model.09.control.concrete)$`item_id:nonalternating_predicate`
+item_ranef_keys = str_split_fixed(rownames(item_ranef_estimates), ":", 2)
+colnames(item_ranef_keys) = c("item_id", "nonalternating_predicate")
+item_ranef_estimates = cbind(item_ranef_keys, item_ranef_estimates) %>% 
+  rename(control_intercept=`(Intercept)`,
+         control_agent_is_given=agent_is_given1) %>% 
+  mutate(item_id=as.double(item_id))
+
+fish_df = concrete_df %>% left_join(item_ranef_estimates, by="item_id")
+fish_model = lmer(slider_value ~
+                agent_is_given * location_is_subject +
+                control_intercept +
+                #control_agent_is_given * agent_is_given +
+                (agent_is_given * location_is_subject|item_id) + 
+                (agent_is_given * location_is_subject|uniqueid),
+              data=fish_df,
+              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+summary(fish_model)
 ```
 
