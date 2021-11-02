@@ -86,7 +86,7 @@ filtered_df_controlled %>%
   ggplot(aes(x=location_is_subject, y=slider_value_ranef_normed, color=agent_is_given)) +
   geom_boxplot() +
   geom_quasirandom(dodge.width=0.75, alpha=0.3) +
-  facet_grid(~agent_is_concrete)
+  facet_grid(~agent_is_concrete, labeller=as_labeller(c(`FALSE`="Abstract", `TRUE`="Concrete")))
 ```
 
 
@@ -160,7 +160,7 @@ ranef(model.09.control)
 
 ### Bayesian
 
-```{r}
+```{r Bayesian concrete regression}
 filtered_df_trans <- filtered_df %>% 
   mutate(slider_value = (slider_value + 0.1) / 100.2) %>% 
   filter(agent_is_concrete == TRUE)
@@ -178,7 +178,7 @@ summary(model.09.concrete.brm)
 
 ### lmer
 
-```{r}
+```{r lmer concrete}
 concrete_df <- filtered_df %>% filter(agent_is_concrete == T)
 model.09.concrete <- lmer(slider_value ~
                 agent_is_given * location_is_subject +
@@ -191,7 +191,7 @@ summary(model.09.concrete)
 
 #### Control analysis on concrete only
 
-```{r}
+```{r Prepare concrete control data}
 control_concrete_df <- df %>%
   filter(is_nonalternating_control,
          `A concrete?`,
@@ -199,9 +199,7 @@ control_concrete_df <- df %>%
          !(condition_0 %in% c("practice", "filler"))) %>% 
   mutate(location_is_subject=!agent_is_subject,
          nonalternating_predicate=`non alternating given A`)
-```
 
-```{r}
 glimpse(control_concrete_df)
 ```
 
@@ -218,7 +216,7 @@ contrasts(control_concrete_df$agent_is_given) = c(-1, 1)
 ```
 
 
-```{r}
+```{r lmer concrete control regression}
 model.09.control.concrete <-
   lmer(slider_value ~
                 agent_is_given +
@@ -231,7 +229,23 @@ summary(model.09.control.concrete)
 ```{r}
 ranef(model.09.control.concrete)
 ```
-```{r, eval=F}
+```{r Bayesian concrete control regression}
+filtered_df_trans <- control_concrete_df %>% 
+  mutate(slider_value = (slider_value + 0.1) / 100.2)
+model.09.concrete.control.brm <- brm(
+  slider_value ~ agent_is_given +
+                 (agent_is_given|nonalternating_predicate/item_id) + 
+                 (agent_is_given|uniqueid),
+                 data=filtered_df_trans, family="beta",
+                 chains=4)
+summary(model.09.concrete.control.brm)
+```
+```{r}
+ranef(model.09.concrete.control.brm)
+```
+
+
+```{r testing, eval=F}
 item_ranef_estimates = ranef(model.09.control.concrete)$`item_id:nonalternating_predicate`
 item_ranef_keys = str_split_fixed(rownames(item_ranef_estimates), ":", 2)
 colnames(item_ranef_keys) = c("item_id", "nonalternating_predicate")
