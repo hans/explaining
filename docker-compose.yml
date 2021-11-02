@@ -23,7 +23,7 @@ services:
         volumes:
             - ./:/home/rstudio
         environment:
-            - PASSWORD=pass
+            - DISABLE_AUTH=true
         ports:
             - "8787:8787"
 
