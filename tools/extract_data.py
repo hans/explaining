@@ -17,15 +17,33 @@ import data as D
 # Metadata fields to extract from each trial
 METADATA_FIELDS = ("experiment_id", "materials_id", "item_id", "condition_id")
 
+NULL_CONDITION_VALUE = -1
+
 def main(args):
     db_path = Path(__file__).parent.parent / "data" / "participants.db"
     D._get_connection(db_path)
     
     raw_df = D.get_trials_df(D.load_raw_results(), METADATA_FIELDS)
+    print(len(raw_df))
+    
+    longest_condition_id = raw_df.condition_id.dropna().apply(len).max()
+    def parse_condition_id(condition_id):
+        if condition_id is None:
+            return pd.Series([NULL_CONDITION_VALUE] * longest_condition_id)
+        
+        pad_list = [NULL_CONDITION_VALUE] * (longest_condition_id - len(condition_id))
+        parsed = pd.Series(condition_id + pad_list)
+        
+        # For numeric conditions, make sure these remain int-valued. replace NA values
+        # with -1 so we can keep the int value.
+        if parsed.dtype.kind == "f":
+            parsed = parsed.fillna(NULL_CONDITION_VALUE).astype(int)
+            
+        return parsed
     
     # Expand condition data from list to multiple columns
-    condition_cols = raw_df.condition_id.apply(pd.Series) \
-        .rename(columns=lambda k: f"condition_{k}").astype(str)
+    condition_cols = raw_df.condition_id.apply(parse_condition_id) \
+        .rename(columns=lambda k: f"condition_{k}")
     raw_df = pd.concat([raw_df, condition_cols], axis=1) \
         .drop(columns="condition_id")
     
