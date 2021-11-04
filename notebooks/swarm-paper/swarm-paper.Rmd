@@ -50,18 +50,111 @@ output            : papaja::apa6_pdf
 ---
 
 ```{r global_options, include=FALSE}
-knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, 
-                      fig.pos = "tb", fig.path='figs/',
-                      echo=F, warning=F, cache=F, 
-                      message=F, sanitize = T)
+# knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, 
+#                       fig.pos = "tb", fig.path='figs/',
+#                       echo=F, warning=F, cache=F, 
+#                       message=F, sanitize = T)
 ```
 
-```{r, libraries}
-library(png)
-library(grid)
-library(ggplot2)
-library(xtable)
+```{r libraries}
+library(tidyverse)
+
+# Regression and regression visualization tools
+library(broom)
+library(broom.mixed)
+library(brms)
+library(lme4)
+library(lmerTest)
+
+# Plotting
+library(ggbeeswarm)
 ```
+```{r custom functions, include=FALSE}
+prepare_demo = function(demo_df) {
+  age_responses = demo_df %>% 
+    filter(internal_node_id == "0.0-0.0") %>% 
+    mutate(survey_answer=as.integer(survey_answer))
+  native_responses = demo_df %>% 
+    filter(trial_type == "survey-multi-choice", survey_question_idx == 1)
+  
+  return(list(
+    N=nrow(age_responses),
+    
+    age_mean=mean(age_responses$survey_answer),
+    age_sd=sd(age_responses$survey_answer),
+    age_min=min(age_responses$survey_answer),
+    age_max=max(age_responses$survey_answer),
+    
+    date_min=min(age_responses$dateTime),
+    date_max=max(age_responses$dateTime)
+  ))
+}
+
+demo_chunk = function(demo_df) {
+  p = papaja::printnum
+  demo = prepare_demo(demo_df)
+  cat(paste0("We recruited ", demo$N, " self-reported native English speakers ",
+             "(age range: ", p(demo$age_min), "--", p(demo$age_max),
+             ", mean: ", p(demo$age_mean), ", SD: ", p(demo$age_sd),
+             ") from Amazon Mechanical Turk. "))
+  cat("Workers were admitted only if the acceptance rate of their past HITs exceeded 95%. ")
+  
+  min_date_str = strftime(demo$date_min, "%B %Y")
+  max_date_str = strftime(demo$date_max, "%B %Y")
+  cat("The data were collected ")
+  if (min_date_str == max_date_str) {
+    cat(paste0("in ", min_date_str, "."))
+  } else {
+    cat(paste0("between ", min_date_str, " and ", max_date_str, "."))
+  }
+}
+
+# Run a one-tailed t-test on filler responses within uniqueid, testing whether
+# responses for some "high" condition exceed responses for some "low" condition.
+# Adds at least two columns to the provided df:
+#   - `exclude`: logical, TRUE iff uniqueid t-test passed
+#   - `p.value`: float, p-value of t-test
+run_slider_exclusions = function(slider_filler_df, condition_variable, 
+                                 high_condition, low_condition, alpha=0.1) {
+  ret = slider_filler_df %>% 
+    group_by(uniqueid, {{condition_variable}}) %>% 
+      nest() %>% 
+        spread(key={{condition_variable}}, value=data) %>% 
+        mutate(t_test=map2({{high_condition}}, {{low_condition}}, ~{
+          t.test(.x$slider_value, .y$slider_value, alternative="greater") %>% tidy()
+        })) %>% 
+        select(-{{high_condition}}, -{{low_condition}}) %>% 
+      unnest(t_test) %>% 
+    mutate(exclude=p.value >= alpha)
+  
+  return(ret)
+}
+```
+
+```{r load raw data}
+DATA_VERSION = "2021-11-04-1141"
+raw_df <- read_csv(paste0("../../data/raw_data.", DATA_VERSION, ".csv"),
+                   na=c("", "nan"),
+                   col_types=cols(item_id=col_factor(NULL))) %>% 
+  mutate(dateTime=lubridate::as_datetime(dateTime / 1000))
+```
+```{r load materials, echo=FALSE}
+all_items = raw_df %>% select(materials_id, item_id) %>% distinct()
+load_json = function(materials_id) {
+  ret <- tryCatch(
+    {jsonlite::read_json(paste0("../../materials/", materials_id, ".json"),
+                         simplifyVector=T)$items %>% 
+        mutate(materials_id=materials_id) %>% 
+        type_convert()},
+    error=function(err){})
+  return(ret)
+}
+
+materials_df <- na.omit(unique(all_items$materials_id)) %>% 
+  map(load_json) %>% 
+  reduce(bind_rows)
+```
+
 
 ## Procedure
 
@@ -93,6 +186,73 @@ Table: Overview of experiments.
 ## Experiments
 
 ### Acceptability experiment {#experiment-swarm-acceptability}
+
+We first confirmed that our uses of the A-construction and L-construction were deemed acceptable by English speakers.
+
+```{r}
+experiment_name = "02_acceptability_swarm"
+
+df.02 = raw_df %>%
+  filter(experiment_id == experiment_name,
+         trial_type == "html-slider-response-with-copout") %>% 
+  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA))
+# Demographic information
+df.02.demo = raw_df %>% 
+  filter(experiment_id == experiment_name,
+         trial_type %in% c("survey-text", "survey-multi-choice"))
+```
+
+#### Participants
+
+```{r, results='asis'}
+# TODO exclude native speakers
+demo_chunk(df.02.demo)
+```
+
+#### Procedure
+
+Subjects were presented with sentences drawn from our materials using either the A-construction or the L-construction, and asked to rate how "natural" each sentence was in each trial on a 7-point Likert scale. Each subject completed several practice trials prior to the experiment designed to calibrate this notion of a "natural" sentence.
+We varied construction type both within-subject and within-item, and the assignment was pseudo-randomly counterbalanced across subjects.
+Subjects were also presented with grammatical and ungrammatical filler sentences. Filler and experimental trials were pseudo-randomly shuffled
+
+#### Exclusion criteria
+
+```{r 02 exclusion}
+subject.ttest.02 = run_slider_exclusions(
+  df.02 %>% filter(condition_0 == "filler"), condition_1, good, bad)
+Nretained.02 = nrow(subject.ttest.02 %>% filter(!exclude))
+```
+
+We used subjects' performance on filler items to design an exclusion criterion. For each subject, we collect their Likert responses on filler items, which have ground-truth "acceptable" and "unacceptable" labels. We then perform a two-sample one-tailed $t$-test between these groups. We retain only those subjects for which we find that $\text{rating}_\text{acceptable} > \text{rating}_\text{unacceptable}$ with one-tailed $p < 0.1$.
+
+`r Nretained.02` subjects (`r Nretained.02 / nrow(subject.ttest.02) * 100`%) were retained by this criterion.
+
+#### Results
+
+```{r 02 slider visualization}
+
+```
+
+```{r 02 regression}
+do_acceptability_regression = function(df, contrast_condition) {
+  df = df %>% filter(condition_1 %in% c("bad", contrast_condition)) %>% 
+    mutate(contrast = condition_1 == contrast_condition)
+  return(lmer(slider_value ~ contrast + (1|item_id) + (1|uniqueid),
+              data=df,
+              contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1))))
+}
+lmer.02.A = do_acceptability_regression(df.02, 1)
+lmer.02.L = do_acceptability_regression(df.02, 0)
+
+lmer.02.A.tidy = lmer.02.A %>% tidy
+lmer.02.L.tidy = lmer.02.L %>% tidy
+
+lmer.02.A.tidy
+lmer.02.L.tidy
+```
+
+
+#### Conclusion
 
 ### Basic comprehension experiment {#experiment-swarm-comprehension-basic}
 
@@ -300,8 +460,8 @@ grid::grid.raster(img)
 Single column is the default option, but if you want set it explicitly, set `fig.env` to `figure`. Notice that the `num.cols` option for the caption width is set to `1`.
 
 ```{r image, fig.env = "figure", fig.pos = "H", fig.align='center', fig.width=2, fig.height=2, set.cap.width=T, num.cols.cap=1, fig.cap = "One column image."}
-img <- png::readPNG("figs/lab_logo_stanford.png")
-grid::grid.raster(img)
+# img <- png::readPNG("figs/lab_logo_stanford.png")
+# grid::grid.raster(img)
 ```
 
 
@@ -311,37 +471,15 @@ You can use R chunks directly to plot graphs. And you can use latex floats in th
 fig.pos chunk option to have more control over the location of your plot on the page. For more information on latex placement specifiers see **[here](https://en.wikibooks.org/wiki/LaTeX/Floats,_Figures_and_Captions)**
 
 ```{r plot, fig.env="figure", fig.pos = "H", fig.align = "center", fig.width=2, fig.height=2, fig.cap = "R plot" }
-x <- 0:100
-y <- 2 * (x + rnorm(length(x), sd = 3) + 3)
-
-ggplot2::ggplot(data = data.frame(x, y), 
-                aes(x = x, y = y)) + 
-  geom_point() + 
-  geom_smooth(method = "lm")
+# x <- 0:100
+# y <- 2 * (x + rnorm(length(x), sd = 3) + 3)
+# 
+# ggplot2::ggplot(data = data.frame(x, y), 
+#                 aes(x = x, y = y)) + 
+#   geom_point() + 
+#   geom_smooth(method = "lm")
 ```
 
-
-## Tables
-
-Number tables consecutively; place the table number and title (in
-10 point) above the table with one line space above the caption and
-one line space below it, as in Table 1. You may float
-tables to the top or bottom of a column, set wide tables across both
-columns.
-
-You can use the xtable function in the xtable package.
-
-```{r xtable, results="asis"}
-n <- 100
-x <- rnorm(n)
-y <- 2*x + rnorm(n)
-out <- lm(y ~ x)
-
-tab1 <- xtable::xtable(summary(out)$coef, digits=c(0, 2, 2, 1, 2), 
-                       caption = "This table prints across one column.")
-
-print(tab1, type="latex", comment = F, table.placement = "H")
-```
 
 # Acknowledgements
 

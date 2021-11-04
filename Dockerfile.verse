@@ -1,4 +1,4 @@
 FROM rocker/verse:latest
 
 RUN R -e "install.packages(c('Rcpp', 'lme4', 'lmerTest', 'brms', 'languageR', 'interactions', 'sjPlot', 'ggbeeswarm'))"
-RUN R -e "devtools::install_github("crsh/papaja")"
+RUN R -e "devtools::install_github("crsh/papaja@devel")"
