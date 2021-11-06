@@ -121,7 +121,17 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
       nest() %>% 
         spread(key={{condition_variable}}, value=data) %>% 
         mutate(t_test=map2({{high_condition}}, {{low_condition}}, ~{
-          t.test(.x$slider_value, .y$slider_value, alternative="greater") %>% tidy()
+          tryCatch(
+            {t.test(.x$slider_value, .y$slider_value, alternative="greater") %>% tidy()},
+            error=function(e) {
+              if (grepl("constant", as.character(e))) {
+                tibble(p.value=0)
+              } else {
+                # reraise
+                stop(e)
+              }
+            }
+          )
         })) %>% 
         select(-{{high_condition}}, -{{low_condition}}) %>% 
       unnest(t_test) %>% 
@@ -132,7 +142,7 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
 ```
 
 ```{r load raw data}
-DATA_VERSION = "2021-11-04-1141"
+DATA_VERSION = "2021-11-06-1831"
 raw_df <- read_csv(paste0("../../data/raw_data.", DATA_VERSION, ".csv"),
                    na=c("", "nan"),
                    col_types=cols(item_id=col_factor(NULL))) %>% 
@@ -237,30 +247,75 @@ We used subjects' performance on filler items to design an exclusion criterion. 
 do_acceptability_regression = function(df, contrast_condition) {
   df = df %>% filter(condition_1 %in% c("bad", contrast_condition)) %>% 
     mutate(contrast = condition_1 == contrast_condition)
-  return(lmer(slider_value ~ contrast + (1|item_id) + (1|uniqueid),
-              data=df,
-              contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1))))
+  model = lmer(slider_value ~ contrast + (1|item_id) + (1|uniqueid),
+               data=df,
+               contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1)))
+  
+  # Compute item responses after controlling for random effects.
+  slider_value_random = predict(model, random.only=T)
+  df_controlled = cbind(df, slider_value_random) %>% 
+    mutate(slider_value_controlled = slider_value - slider_value_random)
+  
+  return(list(model=model, df_controlled=df_controlled))
 }
 lmer.02.A = do_acceptability_regression(df.02, 1)
 lmer.02.L = do_acceptability_regression(df.02, 0)
 
-lmer.02.A.tidy = lmer.02.A %>% tidy
-lmer.02.L.tidy = lmer.02.L %>% tidy
+lmer.02.A.tidy = lmer.02.A$model %>% tidy
+lmer.02.L.tidy = lmer.02.L$model %>% tidy
+```
 
-lmer.02.A.tidy
-lmer.02.L.tidy
+```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items."}
+# TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
+# After controlling for estimated subject/item effets, some responses are higher than 7!
+rbind(lmer.02.A$df_controlled, lmer.02.L$df_controlled) %>% 
+  ggplot(aes(x=condition_1, y=slider_value_controlled)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha=0.3) +
+  scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
+  scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", "bad"="Ungrammatical fillers"))
 ```
 
 
 #### Conclusion
 
+TODO
+
 ### Basic comprehension experiment {#experiment-swarm-comprehension-basic}
 
 To the best of our knowledge, no empirical test of the meaning contrast between the A- and L-construction exists. We first ran an experiment to test whether English speakers recognized this meaning contrast.
 
+```{r}
+experiment_name = "00_comprehension_swarm-construction-meaning"
+
+df.00 = raw_df %>%
+  filter(experiment_id == experiment_name,
+         trial_type == "html-slider-response-with-copout") %>% 
+  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA))
+
+# Drop subjects from early pilot trials which did not include the full set of
+# fillers.
+df.00.drops = df.00 %>% 
+  filter(condition_0 == "filler") %>% 
+  group_by(uniqueid) %>% 
+    summarise(n=n()) %>% 
+  filter(n < 12)
+df.00 = df.00 %>% anti_join(df.00.drops, by=c("uniqueid"))
+
+# Demographic information
+df.00.demo = raw_df %>% 
+  # Perform same exclusion as above
+  anti_join(df.00.drops, by=c("uniqueid")) %>% 
+  filter(experiment_id == experiment_name,
+         trial_type %in% c("survey-text", "survey-multi-choice"))
+```
+
 #### Participants
 
-We recruited TODO self-reported native English speakers (age range: TODO, mean: TODO, SD: TODO) from Amazon Mechanical Turk. Workers were admitted only if the acceptance rate of their past HITs exceeded 95%. The data were collected online between TODO date and TODO date.
+```{r, results='asis'}
+# TODO exclude native speakers
+demo_chunk(df.00.demo)
+```
 
 #### Procedure
 
@@ -278,9 +333,13 @@ TODO copout.
 
 The filler items of the experiment all denoted scenes with clearly empty or full locations. We used subjects' responses on these filler items to check their attention and design an exclusion criterion. For each subject, we collect their responses on filler items with ground-truth "full" locations and ground-truth "empty" locations. We then perform a two-sample one-tailed $t$-test between the two groups. We retain only those subjects for whom this test yields $\text{fullness}_\text{full} > \text{fullness}_\text{empty}$ with a one-tailed $p < 0.1$.
 
-```{r}
-# TODO do exclusion here
+```{r 00 exclusion}
+subject.ttest.00 = run_slider_exclusions(
+  df.00 %>% filter(condition_0 == "filler"), condition_1, full, empty)
+Nretained.00 = nrow(subject.ttest.00 %>% filter(!exclude))
 ```
+
+`r Nretained.00` subjects (`r Nretained.00 / nrow(subject.ttest.00) * 100`%) were retained by this criterion.
 
 #### Results
 
