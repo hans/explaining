@@ -129,7 +129,16 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
             {t.test(.x$slider_value, .y$slider_value, alternative="greater") %>% tidy()},
             error=function(e) {
               if (grepl("constant", as.character(e))) {
-                tibble(p.value=0)
+                # Responses are near-constant within-group. That could mean that
+                # the subject is really consistent within-group and there is a
+                # between-group difference, or they are simply responding the
+                # same across trials. In the former case, we return a successful
+                # p-value; in the latter, unsuccessful.
+                if (mean(.x$slider_value) > mean(.y$slider_value)) {
+                  tibble(p.value=0)
+                } else {
+                  tibble(p.value=1)
+                }
               } else {
                 # reraise
                 stop(e)
