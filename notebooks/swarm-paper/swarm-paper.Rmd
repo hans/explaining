@@ -482,6 +482,7 @@ To the best of our knowledge, no empirical test of the meaning contrast between 
 
 ```{r}
 experiment_name = "00_comprehension_swarm-construction-meaning"
+num_fillers.00 = 8
 
 df.00 = raw_df %>%
   filter(experiment_id == experiment_name,
@@ -496,7 +497,7 @@ df.00.drops = df.00 %>%
   filter(condition_0 == "filler") %>% 
   group_by(uniqueid) %>% 
     summarise(n=n()) %>% 
-  filter(n < 12)
+  filter(n < num_fillers.00)
 df.00 = df.00 %>% anti_join(df.00.drops, by=c("uniqueid"))
 
 # Demographic information
@@ -545,10 +546,12 @@ df.00.filtered = df.00 %>%
 #### Results
 
 ```{r 00 slider visualization}
+# TODO why are there NA excluded values here? set of subjects should be the same
+# in df.00 as in subject.ttest.00
 df.00 %>%
   
   # Join in filler t-test results
-  full_join(select(subject.ttest.00, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
+  left_join(select(subject.ttest.00, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
             by=c("uniqueid")) %>% 
   
   mutate(
@@ -589,9 +592,30 @@ df.00 %>%
 We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulations *Given entity* (sum-coded; Location = -1, Agent/Theme = 1) and *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as fixed effects in the regression, along with the interaction of the two variables. (Note that both manipulations are coded such that we should expect a higher rating on the fullness measure for positive values of the factor.)
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
-```{r}
-# TODO Bayesian regression
+```{r 00 regression, echo=FALSE, cache=TRUE}
+contrasts(df.00.filtered$agent_is_subject) = c(-1, 1)
+
+model.00 = brm(slider_value ~ agent_is_subject
+                            + (agent_is_subject | item_id)
+                            + (agent_is_subject | uniqueid),
+               data=df.00.filtered %>%
+                 mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
+               family="beta")
 ```
+
+```{r 00 controlled figure}
+# TODO need to implement the same logic for brms fits, which don't support predict() with random_only
+# Not confident in the below code. the range of yielded values doesn't make sense
+model.00 %>% tidybayes::add_predicted_draws(newdata=model.frame(model.00) %>% mutate(agent_is_subject=NA)) %>% 
+  group_by(uniqueid, item_id) %>% 
+  summarise(slider_value_controlled=mean(slider_value) - mean(.prediction)) %>% 
+  left_join(model.frame(model.00) %>% select(uniqueid, item_id, agent_is_subject), by=c("uniqueid", "item_id")) %>% 
+  
+  ggplot(aes(x=agent_is_subject, y=slider_value_controlled)) +
+    geom_quasirandom(alpha=0.4) +
+    geom_boxplot(alpha=0.5)
+```
+
 
 TODO report results
 
