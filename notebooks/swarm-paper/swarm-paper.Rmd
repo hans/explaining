@@ -54,9 +54,13 @@ output            : papaja::apa6_pdf
 #                       fig.pos = "tb", fig.path='figs/',
 #                       echo=F, warning=F, cache=F, 
 #                       message=F, sanitize = T)
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "")
+getwd()
 ```
 
-```{r libraries}
+```{r libraries, echo=FALSE}
 library(tidyverse)
 
 # Regression and regression visualization tools
@@ -141,28 +145,27 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
 }
 ```
 
-```{r load raw data}
+```{r load raw data, echo=FALSE}
 DATA_VERSION = "2021-11-06-1831"
 raw_df <- read_csv(paste0("../../data/raw_data.", DATA_VERSION, ".csv"),
                    na=c("", "nan"),
-                   col_types=cols(item_id=col_factor(NULL))) %>% 
-  mutate(dateTime=lubridate::as_datetime(dateTime / 1000))
+                   col_types=cols()) %>% 
+  mutate(dateTime=lubridate::as_datetime(dateTime / 1000),
+         item_id=as.factor(as.integer(item_id)))
 ```
 ```{r load materials, echo=FALSE}
 all_items = raw_df %>% select(materials_id, item_id) %>% distinct()
 load_json = function(materials_id) {
-  ret <- tryCatch(
-    {jsonlite::read_json(paste0("../../materials/", materials_id, ".json"),
+  jsonlite::read_json(paste0("../../materials/", materials_id, ".json"),
                          simplifyVector=T)$items %>% 
-        mutate(materials_id=materials_id) %>% 
-        type_convert()},
-    error=function(err){})
-  return(ret)
+        add_column(materials_id=materials_id, .before=0) %>% 
+        mutate(id=as.factor(as.integer(id))) %>% 
+        relocate(id, .after=materials_id) %>% 
+        type_convert()
 }
 
 materials_df <- na.omit(unique(all_items$materials_id)) %>% 
-  map(load_json) %>% 
-  reduce(bind_rows)
+  map_dfr(possibly(load_json, otherwise=data.frame(), quiet=FALSE))
 ```
 
 
@@ -199,13 +202,22 @@ Table: Overview of experiments.
 
 We first confirmed that our uses of the A-construction and L-construction were deemed acceptable by English speakers.
 
-```{r}
+```{r load 02 data}
 experiment_name = "02_acceptability_swarm"
 
 df.02 = raw_df %>%
   filter(experiment_id == experiment_name,
          trial_type == "html-slider-response-with-copout") %>% 
-  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA))
+  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA)) %>% 
+  
+  left_join(materials_df %>% select(materials_id, id, 
+                                    `A concrete?`, `A countable?`, `A animate?`,
+                                    `L plural?`, A, V, L),
+            by=c("materials_id", "item_id"="id")) %>% 
+  
+  # Retain only concrete items.
+  filter(`A concrete?` == TRUE)
+
 # Demographic information
 df.02.demo = raw_df %>% 
   filter(experiment_id == experiment_name,
@@ -231,6 +243,10 @@ Subjects were also presented with grammatical and ungrammatical filler sentences
 subject.ttest.02 = run_slider_exclusions(
   df.02 %>% filter(condition_0 == "filler"), condition_1, good, bad)
 Nretained.02 = nrow(subject.ttest.02 %>% filter(!exclude))
+
+df.02.filtered = df.02 %>%
+  left_join(subject.ttest.02 %>% select(uniqueid, exclude), by=c("uniqueid")) %>% 
+  filter(exclude == FALSE)
 ```
 
 We used subjects' performance on filler items to design an exclusion criterion. For each subject, we collect their Likert responses on filler items, which have ground-truth "acceptable" and "unacceptable" labels. We then perform a two-sample one-tailed $t$-test between these groups. We retain only those subjects for which we find that $\text{rating}_\text{acceptable} > \text{rating}_\text{unacceptable}$ with one-tailed $p < 0.1$.
@@ -289,8 +305,8 @@ do_acceptability_regression = function(df, contrast_condition) {
   
   return(list(model=model, df_controlled=df_controlled))
 }
-lmer.02.A = do_acceptability_regression(df.02, 1)
-lmer.02.L = do_acceptability_regression(df.02, 0)
+lmer.02.A = do_acceptability_regression(df.02.filtered, 1)
+lmer.02.L = do_acceptability_regression(df.02.filtered, 0)
 
 lmer.02.A.tidy = lmer.02.A$model %>% tidy
 lmer.02.L.tidy = lmer.02.L$model %>% tidy
