@@ -113,6 +113,22 @@ demo_chunk = function(demo_df) {
   }
 }
 
+# Pipe shared across experiments: merge in relevant experimental materials and
+# filter out items based on constraints shared across experiments.
+merge_materials_and_filter = function(df) {
+  df %>% 
+    left_join(materials_df %>% select(materials_id, id, 
+                                      `A concrete?`, `A countable?`, `A animate?`,
+                                      `L plural?`, A, V, L),
+              by=c("materials_id", "item_id"="id")) %>% 
+    
+    # Retain only concrete items.
+    filter(`A concrete?` == TRUE)
+  
+  # TODO drop observations on items that were only present in earlier materials
+  # revisions.
+}
+
 # Run a one-tailed t-test on filler responses within uniqueid, testing whether
 # responses for some "high" condition exceed responses for some "low" condition.
 # Adds at least two columns to the provided df:
@@ -249,13 +265,7 @@ df.02 = raw_df %>%
          trial_type == "html-slider-response-with-copout") %>% 
   mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA)) %>% 
   
-  left_join(materials_df %>% select(materials_id, id, 
-                                    `A concrete?`, `A countable?`, `A animate?`,
-                                    `L plural?`, A, V, L),
-            by=c("materials_id", "item_id"="id")) %>% 
-  
-  # Retain only concrete items.
-  filter(`A concrete?` == TRUE)
+  merge_materials_and_filter
 
 # Demographic information
 df.02.demo = raw_df %>% 
@@ -369,13 +379,7 @@ df.08 = raw_df %>%
                             paste0("c", ifelse(agent_is_subject, "A", "L"),
                                    "g", ifelse(agent_is_given, "A", "L")))) %>% 
   
-  left_join(materials_df %>% select(materials_id, id, 
-                                    `A concrete?`, `A countable?`, `A animate?`,
-                                    `L plural?`, A, V, L),
-            by=c("materials_id", "item_id"="id")) %>% 
-  
-  # Retain only concrete items.
-  filter(`A concrete?` == TRUE)
+  merge_materials_and_filter
 
 # Demographic information
 df.08.demo = raw_df %>% 
@@ -488,7 +492,9 @@ experiment_name = "00_comprehension_swarm-construction-meaning"
 df.00 = raw_df %>%
   filter(experiment_id == experiment_name,
          trial_type == "html-slider-response-with-copout") %>% 
-  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA))
+  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA)) %>% 
+  
+  merge_materials_and_filter
 
 # Drop subjects from early pilot trials which did not include the full set of
 # fillers.
