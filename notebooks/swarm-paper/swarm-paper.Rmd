@@ -152,6 +152,36 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
   
   return(ret)
 }
+
+# Conduct a mixed-effects linear regression on Likert-scale acceptability
+# responses in variable `slider_value`, contrasting an expected "good" and "bad"
+# condition. Returns the model along with a dataframe describing "controlled"
+# data points subtracting estimated random effects. This is useful for
+# visualization.
+#
+# Returns a list containing
+#   - `good_condition`: character
+#   - `bad_condition`: character
+#   - `model`: regression model
+#   - `df_controlled`: `df` filtered to contain the relevant conditions, and
+#     containing a new column `slider_value_controlled` which contains
+#     `slider_value - ranef`, where `ranef` for a given row is the sum of
+#     subject and item random effects estimated in the regression.
+do_acceptability_regression = function(df, condition_col, good_condition, bad_condition) {
+  df = df %>% filter({{condition_col}} %in% c(good_condition, bad_condition)) %>% 
+    mutate(contrast = {{condition_col}} == good_condition)
+  model = lmer(slider_value ~ contrast + (1|item_id) + (1|uniqueid),
+               data=df,
+               contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1)))
+  
+  # Compute item responses after controlling for random effects.
+  slider_value_random = predict(model, random.only=T)
+  df_controlled = cbind(df, slider_value_random) %>% 
+    mutate(slider_value_controlled = slider_value - slider_value_random)
+  
+  return(list(good_condition=good_condition, bad_condition=bad_condition,
+              model=model, df_controlled=df_controlled))
+}
 ```
 
 ```{r load raw data, echo=FALSE}
@@ -300,22 +330,8 @@ df.02 %>%
 ```
 
 ```{r 02 regression}
-do_acceptability_regression = function(df, contrast_condition) {
-  df = df %>% filter(condition_1 %in% c("bad", contrast_condition)) %>% 
-    mutate(contrast = condition_1 == contrast_condition)
-  model = lmer(slider_value ~ contrast + (1|item_id) + (1|uniqueid),
-               data=df,
-               contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1)))
-  
-  # Compute item responses after controlling for random effects.
-  slider_value_random = predict(model, random.only=T)
-  df_controlled = cbind(df, slider_value_random) %>% 
-    mutate(slider_value_controlled = slider_value - slider_value_random)
-  
-  return(list(model=model, df_controlled=df_controlled))
-}
-lmer.02.A = do_acceptability_regression(df.02.filtered, 1)
-lmer.02.L = do_acceptability_regression(df.02.filtered, 0)
+lmer.02.A = do_acceptability_regression(df.02.filtered, condition_1, 1, "bad")
+lmer.02.L = do_acceptability_regression(df.02.filtered, condition_1, 0, "bad")
 
 lmer.02.A.tidy = lmer.02.A$model %>% tidy
 lmer.02.L.tidy = lmer.02.L$model %>% tidy
@@ -336,6 +352,131 @@ rbind(lmer.02.A$df_controlled, lmer.02.L$df_controlled) %>%
 #### Conclusion
 
 TODO
+
+### Two-sentence acceptability experiment {#experiment-swarm-acceptability-two}
+
+Our full experiments use stimuli containing two sentences each. The first sentence establishes an entity as topical, and the second sentence uses the A-construction or L-construction with that entity expressed anaphorically. We next tested whether these two-sentence stimuli were natural for English speakers.
+
+```{r load 02 data}
+experiment_name = "08_acceptability_swarm-withprefix"
+
+df.08 = raw_df %>%
+  filter(experiment_id == experiment_name,
+         trial_type == "html-slider-response-with-copout") %>% 
+  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA),
+         agent_is_given = ifelse(condition_0 %in% c(0, 1), condition_0 == 0, NA),
+         condition = ifelse(condition_0 == "filler", paste(condition_0, condition_1),
+                            paste0("c", ifelse(agent_is_subject, "A", "L"),
+                                   "g", ifelse(agent_is_given, "A", "L")))) %>% 
+  
+  left_join(materials_df %>% select(materials_id, id, 
+                                    `A concrete?`, `A countable?`, `A animate?`,
+                                    `L plural?`, A, V, L),
+            by=c("materials_id", "item_id"="id")) %>% 
+  
+  # Retain only concrete items.
+  filter(`A concrete?` == TRUE)
+
+# Demographic information
+df.08.demo = raw_df %>% 
+  filter(experiment_id == experiment_name,
+         trial_type %in% c("survey-text", "survey-multi-choice"))
+```
+
+#### Participants
+
+```{r, results='asis'}
+# TODO exclude native speakers
+demo_chunk(df.08.demo)
+```
+
+#### Procedure
+
+Subjects were presented with sentences drawn from our materials using either the A-construction or the L-construction, and asked to rate how "natural" each sentence was in each trial on a 7-point Likert scale. Each subject completed several practice trials prior to the experiment designed to calibrate this notion of a "natural" sentence.
+We varied construction type both within-subject and within-item, and the assignment was pseudo-randomly counterbalanced across subjects.
+Subjects were also presented with grammatical and ungrammatical filler sentences. Filler and experimental trials were pseudo-randomly shuffled
+
+#### Exclusion criteria
+
+```{r 08 exclusion}
+subject.ttest.08 = run_slider_exclusions(
+  df.08 %>% filter(condition_0 == "filler"), condition_1, good, bad)
+Nretained.08 = nrow(subject.ttest.08 %>% filter(!exclude))
+
+df.08.filtered = df.08 %>%
+  left_join(subject.ttest.08 %>% select(uniqueid, exclude), by=c("uniqueid")) %>% 
+  filter(exclude == FALSE)
+```
+
+We used subjects' performance on filler items to design an exclusion criterion. For each subject, we collect their Likert responses on filler items, which have ground-truth "acceptable" and "unacceptable" labels. We then perform a two-sample one-tailed $t$-test between these groups. We retain only those subjects for which we find that $\text{rating}_\text{acceptable} > \text{rating}_\text{unacceptable}$ with one-tailed $p < 0.1$.
+
+`r Nretained.08` subjects (`r Nretained.08 / nrow(subject.ttest.08) * 100`%) were retained by this criterion.
+
+#### Results
+
+```{r 08 slider visualization}
+df.08 %>%
+  # Calculate sd-normalized difference between good/bad fillers per subject
+  group_by(uniqueid) %>% 
+    summarise(subject_good_bad_contrast=(mean(slider_value[condition_1 == "good"]) - mean(slider_value[condition_1 == "bad"])) / sd(slider_value)) %>% 
+  
+  full_join(df.08, by=c("uniqueid")) %>% 
+  
+  # Join in exclusion information
+  full_join(select(subject.ttest.08, uniqueid, exclude), by=c("uniqueid")) %>% 
+  
+  mutate(
+    # Reorder subjects based on sd-normalized difference
+    uniqueid=fct_reorder(uniqueid, -subject_good_bad_contrast),
+    
+    plot_group=ifelse(condition_0 == "filler", condition_1,
+                      "exp")) %>%
+  
+  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
+    
+    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
+    scale_color_discrete(name="Stimulus type",
+                         labels=c("exp"="Experimental item",
+                                  "bad"="Ungrammatical filler", "good"="Grammatical filler")) +
+  
+    # Plot boxplots for fillers
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "good")) +
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "bad")) +
+  
+    # Shade based on exclusion
+    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
+              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
+                  ymin = 1, ymax = 7, fill = exclude),
+              alpha = 0.1, color=NA) +
+    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
+  
+    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.08)) +
+    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
+```
+
+```{r 08 regression}
+# TODO how to do this properly in a single regression?
+
+conditions.08 = c("cAgA", "cAgL", "cLgL", "cLgA")
+lmer.08 = conditions.08 %>% 
+  map(~do_acceptability_regression(df.08.filtered, condition, .x, "filler bad"))
+
+# join tidy results
+lmer.08 %>% map_dfr(~.x$model %>% tidy() %>% add_column(condition=.x$good_condition, .before=0))
+```
+
+```{r 08 boxplots, fig.cap="Acceptability responses for two-sentence stimuli and ungrammatical filler items."}
+# TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
+# After controlling for estimated subject/item effects, some responses are higher than 7!
+lmer.08 %>% map_dfr(~.x$df_controlled) %>% 
+  ggplot(aes(x=condition, y=slider_value_controlled)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha=0.3) +
+  scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
+
+  # TODO make this scale
+  # scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", "bad"="Ungrammatical fillers"))
+```
 
 ### Basic comprehension experiment {#experiment-swarm-comprehension-basic}
 
