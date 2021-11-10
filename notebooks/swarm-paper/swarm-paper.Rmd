@@ -523,7 +523,7 @@ df.00.drops = df.00 %>%
   filter(condition_0 == "filler") %>% 
   group_by(uniqueid) %>% 
     summarise(n=n()) %>% 
-  filter(n < num_fillers.00)
+  filter(n != num_fillers.00)
 df.00 = df.00 %>% anti_join(df.00.drops, by=c("uniqueid"))
 
 # Demographic information
@@ -622,6 +622,7 @@ model.00 = xfun::cache_rds({
                    + (location_is_subject | item_id)
                    + (location_is_subject | uniqueid),
       data=df.00.filtered %>%
+        filter(condition_0 != "filler") %>% 
         mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
       family="beta")
 })
