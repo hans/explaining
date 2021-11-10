@@ -350,9 +350,9 @@ df.02 %>%
 We evaluated the effect of our experimental manipulation using two mixed-effects linear regression models, each independently comparing acceptability ratings on a construction (A-construction or L-construction) to ungrammatical items. The fixed effect of interest was this *Contrast* factor (sum-coded; ungrammatical items = -1, critical item = 1). We included as sum-coded covariates *Countability* (whether the agent/theme was a mass or count noun) and *Animacy* (whether the agent/theme expressed an animate participant). Finally, we included interaction terms between these control variables and the *Contrast* factor.
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
-```{r 02 regression}
-lmer.02.A = do_acceptability_regression(df.02.filtered, condition_1, 1, "bad")
-lmer.02.L = do_acceptability_regression(df.02.filtered, condition_1, 0, "bad")
+```{r 02 regression, echo=FALSE}
+lmer.02.A = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, 1, "bad")})
+lmer.02.L = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, 0, "bad")})
 
 lmer.02.A.tidy = lmer.02.A$model %>% tidy
 lmer.02.L.tidy = lmer.02.L$model %>% tidy
@@ -478,8 +478,10 @@ df.08 %>%
 # TODO how to do this properly in a single regression?
 
 conditions.08 = c("cAgA", "cAgL", "cLgL", "cLgA")
-lmer.08 = conditions.08 %>% 
-  map(~do_acceptability_regression(df.08.filtered, condition, .x, "filler bad"))
+lmer.08 = xfun::cache_rds({
+  conditions.08 %>% 
+    map(~do_acceptability_regression(df.08.filtered, condition, .x, "filler bad"))
+})
 
 # join tidy results
 lmer.08 %>% map_dfr(~.x$model %>% tidy() %>% add_column(condition=.x$good_condition, .before=0)) %>% 
