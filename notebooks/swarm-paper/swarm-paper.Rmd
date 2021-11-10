@@ -186,9 +186,15 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
 do_acceptability_regression = function(df, condition_col, good_condition, bad_condition) {
   df = df %>% filter({{condition_col}} %in% c(good_condition, bad_condition)) %>% 
     mutate(contrast = {{condition_col}} == good_condition)
-  model = lmer(slider_value ~ contrast + (1|item_id) + (1|uniqueid),
+  model = lmer(slider_value ~ contrast * `A animate?` 
+                            + contrast * `A countable?`
+                            + (1|item_id)
+                            + (contrast * `A animate?` + contrast * `A countable?`|uniqueid),
                data=df,
-               contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1)))
+               contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1),
+                              `A animate?`=c(-1, 1),
+                              `A countable?`=c(-1, 1)),
+               control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
   
   # Compute item responses after controlling for random effects.
   slider_value_random = predict(model, random.only=T)
@@ -460,7 +466,8 @@ lmer.08 = conditions.08 %>%
   map(~do_acceptability_regression(df.08.filtered, condition, .x, "filler bad"))
 
 # join tidy results
-lmer.08 %>% map_dfr(~.x$model %>% tidy() %>% add_column(condition=.x$good_condition, .before=0))
+lmer.08 %>% map_dfr(~.x$model %>% tidy() %>% add_column(condition=.x$good_condition, .before=0)) %>% 
+  filter(term == "contrast1")
 ```
 
 ```{r 08 boxplots, fig.cap="Acceptability responses for two-sentence stimuli and ungrammatical filler items."}
