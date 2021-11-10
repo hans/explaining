@@ -494,7 +494,7 @@ num_fillers.00 = 8
 df.00 = raw_df %>%
   filter(experiment_id == experiment_name,
          trial_type == "html-slider-response-with-copout") %>% 
-  mutate(agent_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 1, NA)) %>%
+  mutate(location_is_subject = ifelse(condition_1 %in% c(0, 1), condition_1 == 0, NA)) %>%
   
   merge_materials_and_filter
 
@@ -552,7 +552,7 @@ df.00.filtered = df.00 %>%
 
 #### Results
 
-```{r 00 slider visualization}
+```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items."}
 # TODO why are there NA excluded values here? set of subjects should be the same
 # in df.00 as in subject.ttest.00
 df.00 %>%
@@ -592,22 +592,20 @@ df.00 %>%
 ```
 
 
-```{r}
-# TODO render controlled response figure
-```
-
-We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulations *Given entity* (sum-coded; Location = -1, Agent/Theme = 1) and *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as fixed effects in the regression, along with the interaction of the two variables. (Note that both manipulations are coded such that we should expect a higher rating on the fullness measure for positive values of the factor.)
+We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulation *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as a fixed effect in the regression.
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
-```{r 00 regression, echo=FALSE, cache=TRUE}
-contrasts(df.00.filtered$agent_is_subject) = c(-1, 1)
+```{r 00 regression, echo=FALSE}
+contrasts(df.00.filtered$location_is_subject) = c(-1, 1)
 
-model.00 = brm(slider_value ~ agent_is_subject
-                            + (agent_is_subject | item_id)
-                            + (agent_is_subject | uniqueid),
-               data=df.00.filtered %>%
-                 mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
-               family="beta")
+model.00 = xfun::cache_rds({
+  brm(slider_value ~ location_is_subject
+                   + (location_is_subject | item_id)
+                   + (location_is_subject | uniqueid),
+      data=df.00.filtered %>%
+        mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
+      family="beta")
+})
 ```
 
 ```{r 00 controlled figure}
@@ -690,6 +688,11 @@ We used the same exclusion criteria as in \@ref(experiment-swarm-comprehension-b
 ```
 
 #### Results
+
+We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulations *Given entity* (sum-coded; Location = -1, Agent/Theme = 1) and *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as fixed effects in the regression, along with the interaction of the two variables. (Note that both manipulations are coded such that we should expect a higher rating on the fullness measure for positive values of the factor.)
+We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
+
+---
 
 
 The text of the paper should be formatted in two columns with an
