@@ -123,8 +123,8 @@ merge_materials_and_filter = function(df) {
                                       `L plural?`, A, V, L),
               by=c("materials_id", "item_id"="id")) %>% 
     
-    # Retain only concrete items.
-    filter(`A concrete?` == TRUE)
+    # Retain only concrete experimental items.
+    filter(condition_0 == "filler" | `A concrete?` == TRUE)
   
   # TODO drop observations on items that were only present in earlier materials
   # revisions.
