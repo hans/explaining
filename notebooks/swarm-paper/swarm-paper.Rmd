@@ -55,8 +55,8 @@ output            : papaja::apa6_pdf
 #                       echo=F, warning=F, cache=F, 
 #                       message=F, sanitize = T)
 
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "")
+# knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_knit$set(root.dir = "")
 getwd()
 ```
 
@@ -310,7 +310,7 @@ We used subjects' performance on filler items to design an exclusion criterion. 
 
 #### Results
 
-```{r 02 slider visualization}
+```{r 02 slider visualization, cache=TRUE}
 df.02 %>%
   
   # Join in filler t-test results
@@ -343,13 +343,27 @@ df.02 %>%
     scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
 ```
 
+We evaluated the effect of our experimental manipulation using two mixed-effects linear regression models, each independently comparing acceptability ratings on a construction (A-construction or L-construction) to ungrammatical items. The fixed effect of interest was this *Contrast* factor (sum-coded; ungrammatical items = -1, critical item = 1). We included as sum-coded covariates *Countability* (whether the agent/theme was a mass or count noun) and *Animacy* (whether the agent/theme expressed an animate participant). Finally, we included interaction terms between these control variables and the *Contrast* factor.
+We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
+
 ```{r 02 regression}
 lmer.02.A = do_acceptability_regression(df.02.filtered, condition_1, 1, "bad")
 lmer.02.L = do_acceptability_regression(df.02.filtered, condition_1, 0, "bad")
 
 lmer.02.A.tidy = lmer.02.A$model %>% tidy
 lmer.02.L.tidy = lmer.02.L$model %>% tidy
+
+lmer.02.A.print = papaja::apa_print(lmer.02.A$model)
+lmer.02.L.print = papaja::apa_print(lmer.02.L$model)
 ```
+
+```{r 02 regression results, results="asis"}
+papaja::apa_table(lmer.02.A.print$table, caption="Acceptability regression results for the A-construction")
+papaja::apa_table(lmer.02.L.print$table, caption="Acceptability regression results for the L-construction")
+```
+
+
+In each regression we find a significant main effect separating the constructions of interest from ungrammatical English items (A-construction: `r lmer.02.A.print$statistic$contrast1`; L-construction: `r lmer.02.L.print$statistic$contrast1`).
 
 ```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items."}
 # TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
@@ -422,7 +436,7 @@ We used subjects' performance on filler items to design an exclusion criterion. 
 
 #### Results
 
-```{r 08 slider visualization}
+```{r 08 slider visualization, cache=TRUE}
 df.08 %>%
 
   # Join in filler t-test results
@@ -552,7 +566,7 @@ df.00.filtered = df.00 %>%
 
 #### Results
 
-```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items."}
+```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
 # TODO why are there NA excluded values here? set of subjects should be the same
 # in df.00 as in subject.ttest.00
 df.00 %>%
@@ -611,12 +625,12 @@ model.00 = xfun::cache_rds({
 ```{r 00 controlled figure}
 # TODO need to implement the same logic for brms fits, which don't support predict() with random_only
 # Not confident in the below code. the range of yielded values doesn't make sense
-model.00 %>% tidybayes::add_predicted_draws(newdata=model.frame(model.00) %>% mutate(agent_is_subject=NA)) %>% 
+model.00 %>% tidybayes::add_predicted_draws(newdata=model.frame(model.00) %>% mutate(location_is_subject=NA)) %>% 
   group_by(uniqueid, item_id) %>% 
   summarise(slider_value_controlled=mean(slider_value) - mean(.prediction)) %>% 
-  left_join(model.frame(model.00) %>% select(uniqueid, item_id, agent_is_subject), by=c("uniqueid", "item_id")) %>% 
+  left_join(model.frame(model.00) %>% select(uniqueid, item_id, location_is_subject), by=c("uniqueid", "item_id")) %>% 
   
-  ggplot(aes(x=agent_is_subject, y=slider_value_controlled)) +
+  ggplot(aes(x=location_is_subject, y=slider_value_controlled)) +
     geom_quasirandom(alpha=0.4) +
     geom_boxplot(alpha=0.5)
 ```
@@ -692,131 +706,6 @@ We used the same exclusion criteria as in \@ref(experiment-swarm-comprehension-b
 We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulations *Given entity* (sum-coded; Location = -1, Agent/Theme = 1) and *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as fixed effects in the regression, along with the interaction of the two variables. (Note that both manipulations are coded such that we should expect a higher rating on the fullness measure for positive values of the factor.)
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
----
-
-
-The text of the paper should be formatted in two columns with an
-overall width of 7 inches (17.8 cm) and length of 9.25 inches (23.5
-cm), with 0.25 inches between the columns. Leave two line spaces
-between the last author listed and the text of the paper; the text of
-the paper (starting with the abstract) should begin no less than 2.75 inches below the top of the
-page. The left margin should be 0.75 inches and the top margin should
-be 1 inch.  \textbf{The right and bottom margins will depend on
-whether you use U.S. letter or A4 paper, so you must be sure to
-measure the width of the printed text.} Use 10~point Times Roman
-with 12~point vertical spacing, unless otherwise specified.
-
-The title should be in 14~point bold font, centered. The title should
-be formatted with initial caps (the first letter of content words
-capitalized and the rest lower case). In the initial submission, the
-phrase ``Anonymous CogSci submission'' should appear below the title,
-centered, in 11~point bold font.  In the final submission, each
-author's name should appear on a separate line, 11~point bold, and
-centered, with the author's email address in parentheses. Under each
-author's name list the author's affiliation and postal address in
-ordinary 10~point type.
-
-Indent the first line of each paragraph by 1/8~inch (except for the
-first paragraph of a new section). Do not add extra vertical space
-between paragraphs.
-
-
-# First-Level Headings
-
-First level headings should be in 12 point , initial caps, bold and
-centered. Leave one line space above the heading and 1/4~line space
-below the heading.
-
-## Second-Level Headings
-
-Second level headings should be 11 point , initial caps, bold, and
-flush left. Leave one line space above the heading and 1/4~ line
-space below the heading.
-
-### Third-Level Headings
-
-Third-level headings should be 10 point , initial caps, bold, and flush
-left. Leave one line space above the heading, but no space after the
-heading.
-
-# Formalities, Footnotes, and Floats
-
-Use standard APA citation format. Citations within the text should
-include the author's last name and year. If the authors' names are
-included in the sentence, place only the year in parentheses, as in
-[-@NewellSimon1972a], but otherwise place the entire reference in
-parentheses with the authors and year separated by a comma
-[@NewellSimon1972a]. List multiple references alphabetically and
-separate them by semicolons [@ChalnickBillman1988a; @NewellSimon1972a]. 
-Use the et. al. construction only after listing all the authors to a
-publication in an earlier reference and for citations with four or
-more authors.
-
-For more information on citations in RMarkdown, see **[here](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html#citations).**
-
-## Footnotes
-
-Indicate footnotes with a number\footnote{Sample of the first
-footnote.} in the text. Place the footnotes in 9 point type at the
-bottom of the page on which they appear. Precede the footnote with a
-horizontal rule.\footnote{Sample of the second footnote.} You can also use 
-markdown formatting to include footnotes using this syntax [^1].
-
-[^1]: Sample of a markdown footnote.
-
-## Figures
-
-All artwork must be very dark for purposes of reproduction and should
-not be hand drawn. Number figures sequentially, placing the figure
-number and caption, in 10 point, after the figure with one line space
-above the caption and one line space below it. If necessary, leave extra white space at
-the bottom of the page to avoid splitting the figure and figure
-caption. You may float figures to the top or bottom of a column, or
-set wide figures across both columns.
-
-## Two-column images
-
-You can read local images using png package for example and plot 
-it like a regular plot using grid.raster from the grid package. 
-With this method you have full control of the size of your image. **Note: Image must be in .png file format for the readPNG function to work.**
-
-You might want to display a wide figure across both columns. To do this, you change the `fig.env` chunk option to `figure*`. To align the image in the center of the page, set `fig.align` option to `center`. To format the width of your caption text, you set the `num.cols.cap` option to `2`.
-
-```{r 2-col-image, fig.env = "figure*", fig.pos = "h", fig.width=4, fig.height=2, fig.align = "center", set.cap.width=T, num.cols.cap=2, fig.cap = "This image spans both columns. And the caption text is limited to 0.8 of the width of the document."}
-img <- png::readPNG("figs/walrus.png")
-grid::grid.raster(img)
-```
-
-## One-column images
-
-Single column is the default option, but if you want set it explicitly, set `fig.env` to `figure`. Notice that the `num.cols` option for the caption width is set to `1`.
-
-```{r image, fig.env = "figure", fig.pos = "H", fig.align='center', fig.width=2, fig.height=2, set.cap.width=T, num.cols.cap=1, fig.cap = "One column image."}
-# img <- png::readPNG("figs/lab_logo_stanford.png")
-# grid::grid.raster(img)
-```
-
-
-## R Plots
-
-You can use R chunks directly to plot graphs. And you can use latex floats in the
-fig.pos chunk option to have more control over the location of your plot on the page. For more information on latex placement specifiers see **[here](https://en.wikibooks.org/wiki/LaTeX/Floats,_Figures_and_Captions)**
-
-```{r plot, fig.env="figure", fig.pos = "H", fig.align = "center", fig.width=2, fig.height=2, fig.cap = "R plot" }
-# x <- 0:100
-# y <- 2 * (x + rnorm(length(x), sd = 3) + 3)
-# 
-# ggplot2::ggplot(data = data.frame(x, y), 
-#                 aes(x = x, y = y)) + 
-#   geom_point() + 
-#   geom_smooth(method = "lm")
-```
-
-
-# Acknowledgements
-
-Place acknowledgments (including funding information) in a section at
-the end of the paper.
 
 # References 
 
