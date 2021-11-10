@@ -205,7 +205,11 @@ do_acceptability_regression = function(df, condition_col, good_condition, bad_co
               model=model, df_controlled=df_controlled))
 }
 ```
-
+```{r shared chunks, include=FALSE}
+describe_stimuli_two_sentence = function() {
+  return("We presented subjects with the two-sentence stimuli described in \\@ref(stimuli). We manipulated the two relevant factors (*Given entity*, determined by the first sentence, establishing either the Agent/Theme or Location as a referent; and *Construction type*, evident in the second sentence, using either the A-construction or L-construction). Both manipulations were within-subject and within-item, pseudo-randomly counterbalanced between subjects.")
+}
+```
 ```{r load raw data, echo=FALSE}
 DATA_VERSION = "2021-11-06-1831"
 raw_df <- read_csv(paste0("../../data/raw_data.", DATA_VERSION, ".csv"),
@@ -365,7 +369,7 @@ papaja::apa_table(lmer.02.L.print$table, caption="Acceptability regression resul
 
 In each regression we find a significant main effect separating the constructions of interest from ungrammatical English items (A-construction: `r lmer.02.A.print$statistic$contrast1`; L-construction: `r lmer.02.L.print$statistic$contrast1`).
 
-```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items."}
+```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items, after controlling for by-item and by-subject random effects."}
 # TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
 # After controlling for estimated subject/item effets, some responses are higher than 7!
 rbind(lmer.02.A$df_controlled, lmer.02.L$df_controlled) %>% 
@@ -414,9 +418,8 @@ demo_chunk(df.08.demo)
 
 #### Procedure
 
-Subjects were presented with sentences drawn from our materials using either the A-construction or the L-construction, and asked to rate how "natural" each sentence was in each trial on a 7-point Likert scale. Each subject completed several practice trials prior to the experiment designed to calibrate this notion of a "natural" sentence.
-We varied construction type both within-subject and within-item, and the assignment was pseudo-randomly counterbalanced across subjects.
-Subjects were also presented with grammatical and ungrammatical filler sentences. Filler and experimental trials were pseudo-randomly shuffled
+`r describe_stimuli_two_sentence()` Subjects were asked to rate how "natural" each passage was in each trial on a 7-point Likert scale. Each subject completed several practice trials prior to the experiment designed to calibrate this notion of a "natural" passage.
+Subjects were also presented with grammatical and ungrammatical filler sentences. Filler and experimental trials were pseudo-randomly shuffled.
 
 #### Exclusion criteria
 
@@ -431,7 +434,6 @@ df.08.filtered = df.08 %>%
 ```
 
 We used subjects' performance on filler items to design an exclusion criterion. For each subject, we collect their Likert responses on filler items, which have ground-truth "acceptable" and "unacceptable" labels. We then perform a two-sample one-tailed $t$-test between these groups. We retain only those subjects for which we find that $\text{rating}_\text{acceptable} > \text{rating}_\text{unacceptable}$ with one-tailed $p < 0.1$.
-
 `r Nretained.08` subjects (`r Nretained.08 / nrow(subject.ttest.08) * 100`%) were retained by this criterion.
 
 #### Results
@@ -472,7 +474,7 @@ df.08 %>%
     scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
 ```
 
-```{r 08 regression}
+```{r 08 regression, echo=FALSE}
 # TODO how to do this properly in a single regression?
 
 conditions.08 = c("cAgA", "cAgL", "cLgL", "cLgA")
@@ -484,7 +486,7 @@ lmer.08 %>% map_dfr(~.x$model %>% tidy() %>% add_column(condition=.x$good_condit
   filter(term == "contrast1")
 ```
 
-```{r 08 boxplots, fig.cap="Acceptability responses for two-sentence stimuli and ungrammatical filler items."}
+```{r 08 boxplots, fig.cap="Acceptability responses for two-sentence stimuli and ungrammatical filler items, after controlling for by-item and by-subject random effects."}
 # TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
 # After controlling for estimated subject/item effects, some responses are higher than 7!
 lmer.08 %>% map_dfr(~.x$df_controlled) %>% 
@@ -685,8 +687,7 @@ TODO what did we do here?
 
 #### Procedure
 
-We presented subjects with the two-sentence stimuli described in \@ref(stimuli). We manipulated the two relevant factors (*Given entity*, determined by the first sentence, establishing either the Agent/Theme or Location as a referent; and *Construction type*, evident in the second sentence, using either the A-construction or L-construction). Both manipulations were within-subject and within-item, pseudo-randomly counterbalanced between subjects.
-
+`r describe_stimuli_two_sentence()`
 We used the same slider interface as described in \@ref(experiment-swarm-comprehension-basic). An example trial is shown in TODO.
 
 TODO filler items
