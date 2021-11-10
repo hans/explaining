@@ -371,7 +371,7 @@ TODO
 
 Our full experiments use stimuli containing two sentences each. The first sentence establishes an entity as topical, and the second sentence uses the A-construction or L-construction with that entity expressed anaphorically. We next tested whether these two-sentence stimuli were natural for English speakers.
 
-```{r load 02 data}
+```{r load 08 data}
 experiment_name = "08_acceptability_swarm-withprefix"
 
 df.08 = raw_df %>%
