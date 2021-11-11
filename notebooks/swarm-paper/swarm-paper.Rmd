@@ -238,7 +238,7 @@ describe_stimuli_two_sentence = function() {
 }
 ```
 ```{r load raw data, echo=FALSE}
-DATA_VERSION = "2021-11-06-1831"
+DATA_VERSION = "2021-11-11-1440"
 raw_df <- read_csv(paste0("../../data/raw_data.", DATA_VERSION, ".csv"),
                    na=c("", "nan"),
                    col_types=cols()) %>% 
