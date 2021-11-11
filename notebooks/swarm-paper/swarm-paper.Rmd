@@ -696,17 +696,36 @@ model.00 = xfun::cache_rds({
 })
 ```
 
-```{r 00 controlled figure}
-# TODO need to implement the same logic for brms fits, which don't support predict() with random_only
-# Not confident in the below code. the range of yielded values doesn't make sense
-model.00 %>% tidybayes::add_predicted_draws(newdata=model.frame(model.00) %>% mutate(location_is_subject=NA)) %>% 
-  group_by(uniqueid, item_id) %>% 
-  summarise(slider_value_controlled=mean(slider_value) - mean(.prediction)) %>% 
-  left_join(model.frame(model.00) %>% select(uniqueid, item_id, location_is_subject), by=c("uniqueid", "item_id")) %>% 
+```{r 00 plot raw responses, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
+df.00.filtered %>% 
+  ggplot(aes(x=condition_1, y=slider_value)) +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
+                 geom="bar") +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
+                 geom="errorbar") +
   
-  ggplot(aes(x=location_is_subject, y=slider_value_controlled)) +
-    geom_quasirandom(alpha=0.4) +
-    geom_boxplot(alpha=0.5)
+    stat_summary(aes(x=1, fill=condition_1),
+                 data=. %>% filter(condition_1 == "full"), fun.data=mean_se,
+                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
+    stat_summary(aes(x=1, fill=condition_1),
+                 data=. %>% filter(condition_1 == "empty"), fun.data=mean_se,
+                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
+  
+    scale_x_discrete("Construction type", labels=c(`0`="L-construction", `1`="A-construction")) +
+    scale_fill_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
+```
+
+```{r 00 controlled figure}
+# # TODO need to implement the same logic for brms fits, which don't support predict() with random_only
+# # Not confident in the below code. the range of yielded values doesn't make sense
+# model.00 %>% tidybayes::add_predicted_draws(newdata=model.frame(model.00) %>% mutate(location_is_subject=NA)) %>% 
+#   group_by(uniqueid, item_id) %>% 
+#   summarise(slider_value_controlled=mean(slider_value) - mean(.prediction)) %>% 
+#   left_join(model.frame(model.00) %>% select(uniqueid, item_id, location_is_subject), by=c("uniqueid", "item_id")) %>% 
+#   
+#   ggplot(aes(x=location_is_subject, y=slider_value_controlled)) +
+#     geom_quasirandom(alpha=0.4) +
+#     geom_boxplot(alpha=0.5)
 ```
 
 
