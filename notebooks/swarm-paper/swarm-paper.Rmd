@@ -403,7 +403,37 @@ model.02$df_controlled %>%
   scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
   scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", "bad"="Ungrammatical fillers"))
 ```
-
+```{r 02 raw responses by condition, fig.cap="Acceptability ratings by condition, compared to grammatical and ungrammatical filler items. Error bars indicate standard error."}
+df.02.filtered %>%
+  ggplot(aes(x=condition_1, y=slider_value)) +
+    stat_summary(fun=mean, geom="bar") +
+    stat_summary(fun.data=mean_se, geom="errorbar") +
+    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
+    scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", 
+                                                "bad"="Ungrammatical fillers",
+                                                "good"="Grammatical fillers"))
+```
+```{r 02 raw responses by condition and item, fig.cap="Acceptability ratings by condition and item. Error bars indicate standard error."}
+df.02.filtered %>%
+  ggplot(aes(x=item_id, y=slider_value, fill=condition_1)) +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
+                 geom="bar", position="dodge") +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
+                 geom="errorbar", position="dodge") +
+  
+    stat_summary(aes(x=1, fill=NULL, color=condition_1), 
+                 data=. %>% filter(condition_1 == "good"), fun.data=mean_se,
+                 geom="errorbar", xmin=0, xmax=Inf, alpha=0.5) +
+    stat_summary(aes(x=1, fill=NULL, color=condition_1), 
+                 data=. %>% filter(condition_1 == "bad"), fun.data=mean_se,
+                 geom="errorbar", xmin=0, xmax=Inf, alpha=0.5) +
+  
+    scale_x_discrete(name="Item") +
+    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
+    scale_fill_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction")) +
+    scale_color_discrete(name="Filler items", labels=c("bad"="Ungrammatical fillers",
+                                                       "good"="Grammatical fillers"))
+```
 
 #### Conclusion
 
