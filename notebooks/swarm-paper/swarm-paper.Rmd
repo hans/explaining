@@ -183,22 +183,26 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
 }
 
 # Conduct a mixed-effects linear regression on Likert-scale acceptability
-# responses in variable `slider_value`, contrasting an expected "good" and "bad"
-# condition. Returns the model along with a dataframe describing "controlled"
+# responses in variable `slider_value`, contrasting expected "good" and "bad"
+# condition.
+# This contrast is treatment-coded, with the "bad" condition as the reference
+# level.
+# 
+# Returns the model along with a dataframe describing "controlled"
 # data points subtracting estimated random effects. This is useful for
 # visualization.
 #
 # Returns a list containing
-#   - `good_condition`: character
+#   - `exp_conditions`: character vector
 #   - `bad_condition`: character
 #   - `model`: regression model
 #   - `df_controlled`: `df` filtered to contain the relevant conditions, and
 #     containing a new column `slider_value_controlled` which contains
 #     `slider_value - ranef`, where `ranef` for a given row is the sum of
 #     subject and item random effects estimated in the regression.
-do_acceptability_regression = function(df, condition_col, good_condition, bad_condition) {
-  df = df %>% filter({{condition_col}} %in% c(good_condition, bad_condition)) %>% 
-    mutate(contrast = {{condition_col}} == good_condition)
+do_acceptability_regression = function(df, condition_col, exp_conditions, bad_condition) {
+  df = df %>% filter({{condition_col}} %in% c(bad_condition, exp_conditions)) %>% 
+    mutate(contrast = relevel(as.factor({{condition_col}}), ref=bad_condition))
   
   # DEV: leaving out control variables because they're not defined for fillers.
   # model = lmer(slider_value ~ contrast * `A animate?` 
@@ -214,17 +218,17 @@ do_acceptability_regression = function(df, condition_col, good_condition, bad_co
                             + (contrast|item_id)
                             + (contrast|uniqueid),
                data=df,
-               contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1),
+               contrasts=list(contrast=contr.treatment(levels(df$contrast)),
                               `A animate?`=c(-1, 1),
                               `A countable?`=c(-1, 1)),
                control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
   
   # Compute item responses after controlling for random effects.
   slider_value_random = predict(model, random.only=T)
-  df_controlled = cbind(df, slider_value_random) %>% 
+  df_controlled = cbind(df, slider_value_random) %>%
     mutate(slider_value_controlled = slider_value - slider_value_random)
-  
-  return(list(good_condition=good_condition, bad_condition=bad_condition,
+
+  return(list(exp_conditions=exp_conditions, bad_condition=bad_condition,
               model=model, df_controlled=df_controlled))
 }
 ```
@@ -370,7 +374,7 @@ df.02 %>%
     scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
 ```
 
-We evaluated the effect of our experimental manipulation using two mixed-effects linear regression models, each independently comparing acceptability ratings on a construction (A-construction or L-construction) to ungrammatical items. The fixed effect of interest was this *Contrast* factor (sum-coded; ungrammatical items = -1, critical item = 1). We included as sum-coded covariates *Countability* (whether the agent/theme was a mass or count noun) and *Animacy* (whether the agent/theme expressed an animate participant). Finally, we included interaction terms between these control variables and the *Contrast* factor.
+We evaluated the effect of our experimental manipulation using a mixed-effects linear regression model, comparing acceptability ratings on each construction (A-construction or L-construction) to ungrammatical items. The fixed effect of interest was this *Contrast* factor (treatment-coded; ungrammatical items = 0, A-construction = 1, L-construction = 1). We included as sum-coded covariates *Countability* (whether the agent/theme was a mass or count noun) and *Animacy* (whether the agent/theme expressed an animate participant). Finally, we included interaction terms between these control variables and the *Contrast* factor.
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
 ```{r 02 regression, echo=FALSE}
@@ -378,28 +382,20 @@ We used a maximal random effect structure, including all logically possible by-s
 # #1 is easy to fix. #2 we need to recover the correct materials for fillers
 # For now, going to leave out those control variables.
 
-lmer.02.A = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, 1, "bad")})
-lmer.02.L = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, 0, "bad")})
-
-lmer.02.A.tidy = lmer.02.A$model %>% tidy
-lmer.02.L.tidy = lmer.02.L$model %>% tidy
-
-lmer.02.A.print = papaja::apa_print(lmer.02.A$model)
-lmer.02.L.print = papaja::apa_print(lmer.02.L$model)
+model.02 = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, c(0, 1), bad_condition)})
+model.02.print = papaja::apa_print(model.02$model)
 ```
 
 ```{r 02 regression results, results="asis"}
-papaja::apa_table(lmer.02.A.print$table, caption="Acceptability regression results for the A-construction")
-papaja::apa_table(lmer.02.L.print$table, caption="Acceptability regression results for the L-construction")
+papaja::apa_table(model.02.print$table, caption="Acceptability regression results")
 ```
 
-
-In each regression we find a significant main effect separating the constructions of interest from ungrammatical English items (A-construction: `r lmer.02.A.print$statistic$contrast1`; L-construction: `r lmer.02.L.print$statistic$contrast1`).
+The regression shows a significant main effect relative to ungrammatical English items for both constructions (A-construction: `r model.02.print$statistic$contrast1`; L-construction: `r model.02.print$statistic$contrast0`).
 
 ```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items, after controlling for by-item and by-subject random effects."}
 # TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
 # After controlling for estimated subject/item effets, some responses are higher than 7!
-rbind(lmer.02.A$df_controlled, lmer.02.L$df_controlled) %>% 
+model.02$df_controlled %>% 
   ggplot(aes(x=condition_1, y=slider_value_controlled)) +
   geom_boxplot() +
   geom_quasirandom(alpha=0.3) +
