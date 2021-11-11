@@ -156,6 +156,18 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
                 } else {
                   tibble(p.value=1)
                 }
+              } else if (grepl("not enough", as.character(e))) {
+                # Not enough observations in one of the groups. Subject may have
+                # copped out a lot. Verify this; if true, return p=1 to exclude.
+                # Otherwise reraise.
+                if (length(na.omit(.x$slider_value)) <= 1 ||
+                    length(na.omit(.y$slider_value)) <= 1) {
+                  warning("Subject had <= 1 non-copout filler responses. Excluding.")
+                  tibble(p.value=1)
+                } else {
+                  # reraise
+                  stop(e)
+                }
               } else {
                 # reraise
                 stop(e)
