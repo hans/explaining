@@ -199,10 +199,20 @@ run_slider_exclusions = function(slider_filler_df, condition_variable,
 do_acceptability_regression = function(df, condition_col, good_condition, bad_condition) {
   df = df %>% filter({{condition_col}} %in% c(good_condition, bad_condition)) %>% 
     mutate(contrast = {{condition_col}} == good_condition)
-  model = lmer(slider_value ~ contrast * `A animate?` 
-                            + contrast * `A countable?`
-                            + (1|item_id)
-                            + (contrast * `A animate?` + contrast * `A countable?`|uniqueid),
+  
+  # DEV: leaving out control variables because they're not defined for fillers.
+  # model = lmer(slider_value ~ contrast * `A animate?` 
+  #                           + contrast * `A countable?`
+  #                           + (1|item_id)
+  #                           + (contrast * `A animate?` + contrast * `A countable?`|uniqueid),
+  #              data=df,
+  #              contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1),
+  #                             `A animate?`=c(-1, 1),
+  #                             `A countable?`=c(-1, 1)),
+  #              control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
+    model = lmer(slider_value ~ contrast
+                            + (contrast|item_id)
+                            + (contrast|uniqueid),
                data=df,
                contrasts=list(contrast=c(`FALSE`=-1, `TRUE`=1),
                               `A animate?`=c(-1, 1),
@@ -364,6 +374,10 @@ We evaluated the effect of our experimental manipulation using two mixed-effects
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
 ```{r 02 regression, echo=FALSE}
+# TODO acceptability regression incorporates animacy and countability, but 1) these aren't defined for fillers and 2) filler materials ID didn't get recorded correctly for early experiments.
+# #1 is easy to fix. #2 we need to recover the correct materials for fillers
+# For now, going to leave out those control variables.
+
 lmer.02.A = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, 1, "bad")})
 lmer.02.L = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, 0, "bad")})
 
