@@ -233,6 +233,29 @@ do_acceptability_regression = function(df, condition_col, exp_conditions, bad_co
               model=model, df_controlled=df_controlled))
 }
 ```
+```{r shared plotting functions, include=FALSE}
+plot_acceptability_by_item = function(df, condition_variable, condition_labels) {
+  df %>% 
+    ggplot(aes(x=item_id, y=slider_value, fill={{condition_variable}})) +
+      stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
+                   geom="bar", position="dodge") +
+      stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
+                   geom="errorbar", position="dodge") +
+    
+      stat_summary(aes(x=1, fill=NULL, color={{condition_variable}}), 
+                   data=. %>% filter(condition_1 == "good"), fun.data=mean_se,
+                   geom="errorbar", xmin=0, xmax=Inf, alpha=0.5) +
+      stat_summary(aes(x=1, fill=NULL, color={{condition_variable}}), 
+                   data=. %>% filter(condition_1 == "bad"), fun.data=mean_se,
+                   geom="errorbar", xmin=0, xmax=Inf, alpha=0.5) +
+    
+      scale_x_discrete(name="Item") +
+      scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
+      scale_fill_discrete(name="Condition", labels=condition_labels) +
+      scale_color_discrete(name="Filler items", labels=c("bad"="Ungrammatical fillers",
+                                                         "good"="Grammatical fillers"))
+}
+```
 ```{r shared chunks, include=FALSE}
 describe_stimuli_two_sentence = function() {
   return("We presented subjects with the two-sentence stimuli described in \\@ref(stimuli). We manipulated the two relevant factors (*Given entity*, determined by the first sentence, establishing either the Agent/Theme or Location as a referent; and *Construction type*, evident in the second sentence, using either the A-construction or L-construction). Both manipulations were within-subject and within-item, pseudo-randomly counterbalanced between subjects.")
@@ -414,25 +437,8 @@ df.02.filtered %>%
                                                 "good"="Grammatical fillers"))
 ```
 ```{r 02 raw responses by condition and item, fig.cap="Acceptability ratings by condition and item. Error bars indicate standard error."}
-df.02.filtered %>%
-  ggplot(aes(x=item_id, y=slider_value, fill=condition_1)) +
-    stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
-                 geom="bar", position="dodge") +
-    stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
-                 geom="errorbar", position="dodge") +
-  
-    stat_summary(aes(x=1, fill=NULL, color=condition_1), 
-                 data=. %>% filter(condition_1 == "good"), fun.data=mean_se,
-                 geom="errorbar", xmin=0, xmax=Inf, alpha=0.5) +
-    stat_summary(aes(x=1, fill=NULL, color=condition_1), 
-                 data=. %>% filter(condition_1 == "bad"), fun.data=mean_se,
-                 geom="errorbar", xmin=0, xmax=Inf, alpha=0.5) +
-  
-    scale_x_discrete(name="Item") +
-    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
-    scale_fill_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction")) +
-    scale_color_discrete(name="Filler items", labels=c("bad"="Ungrammatical fillers",
-                                                       "good"="Grammatical fillers"))
+plot_acceptability_by_item(df.02.filtered, condition_1,
+                           condition_labels=c(`0`="L-construction", `1`="A-construction"))
 ```
 
 #### Conclusion
