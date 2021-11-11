@@ -524,7 +524,7 @@ To the best of our knowledge, no empirical test of the meaning contrast between 
 
 ```{r}
 experiment_name = "00_comprehension_swarm-construction-meaning"
-num_fillers.00 = 8
+num_fillers.00 = 12
 
 df.00 = raw_df %>%
   filter(experiment_id == experiment_name,
