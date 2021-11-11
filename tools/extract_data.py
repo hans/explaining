@@ -50,6 +50,19 @@ def main(args):
     # Add `experiment_id` to early trials which mistakenly dropped it.
     raw_df.loc[(raw_df.trial_type.isin(["html-slider-response-with-copout", "survey-text", "survey-multi-choice"])) & raw_df.experiment_id.isna() & (raw_df.dateTime < 1628370478823), "experiment_id"] = "00_comprehension_swarm-construction-meaning"
 
+    # Fix filler materials paths
+    filler_paths = {
+        "00_comprehension_swarm-construction-meaning": "swarm_comprehension-000-base",
+        "02_acceptability_swarm": "swarm_acceptability-000-base",
+        "03_production_swarm_givenness": "swarm_production-001-twosentences",
+        "04_comprehension_swarm-full": "swarm_comprehension-000-base",
+        "08_acceptability_swarm-withprefix": "swarm_acceptability-001-withprefix",
+        "09_comprehension_swarm-full-nonalternating-control": "swarm_comprehension-000-base"
+    }
+    filler_paths = {experiment_id: f"fillers/{name}" for experiment_id, name in filler_paths.items()}
+    to_fix_cond = raw_df.condition_0 == "filler"
+    raw_df.loc[to_fix_cond, "materials_id"] = raw_df[to_fix_cond].experiment_id.map(filler_paths)
+
     time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H%M")
     out_file = f"raw_data.{time_str}.csv"
     out_path = Path(args.outdir) / out_file
