@@ -120,7 +120,8 @@ merge_materials_and_filter = function(df) {
   df %>% 
     left_join(materials_df %>% select(materials_id, id, 
                                       `A concrete?`, `A countable?`, `A animate?`,
-                                      `L plural?`, A, V, L),
+                                      `L plural?`, A, V, L,
+                                      `non alternating given A`),
               by=c("materials_id", "item_id"="id")) %>% 
     
     # Retain only concrete experimental items.
@@ -754,6 +755,121 @@ lmer.03 = xfun::cache_rds({
 #### Conclusion
 
 ### Control comprehension experiment {#experiment-swarm-comprehension-control}
+
+```{r load 09 data}
+experiment_names = c("09_comprehension_swarm-full-nonalternating-control")
+
+df.09c = raw_df %>%
+  filter(experiment_id %in% experiment_names,
+         trial_type == "html-slider-response-with-copout",
+         # Retain only fillers and nonalternating control trials.
+         condition_0 == "filler" | condition_1 == 2) %>% 
+  
+  # TODO double double check condition_1 codes here, including consistency between two experiment runs
+  mutate(agent_is_given = ifelse(condition_0 %in% c(0, 1), condition_0 == 0, NA)) %>% 
+
+  merge_materials_and_filter %>% 
+  
+  # pick an easier variable name
+  rename(nonalternating_predicate=`non alternating given A`)
+
+# Demographic information
+df.09c.demo = raw_df %>% 
+  # Perform same exclusion as above
+  # anti_join(df.04.drops, by=c("uniqueid")) %>%
+  filter(experiment_id %in% experiment_names,
+         trial_type %in% c("survey-text", "survey-multi-choice"))
+```
+
+#### Participants
+
+```{r, results='asis'}
+# TODO exclude native speakers
+demo_chunk(df.09c.demo)
+```
+
+#### Procedure
+
+TODO
+
+#### Exclusion criteria
+
+We used the same exclusion criteria as in \@ref(experiment-swarm-comprehension-basic).
+
+```{r 09c exclusion}
+subject.ttest.09c = run_slider_exclusions(
+  df.09c %>% filter(condition_0 == "filler"), condition_1, full, empty)
+Nretained.09c = nrow(subject.ttest.09c %>% filter(!exclude))
+
+df.09c.filtered = df.09c %>% 
+  left_join(subject.ttest.09c %>% select(uniqueid, exclude), by=c("uniqueid")) %>% 
+  filter(exclude == FALSE)
+```
+
+`r Nretained.09c` subjects (`r Nretained.09c / nrow(subject.ttest.09c) * 100`%) were retained by this criterion.
+
+#### Results
+
+```{r 09c slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
+df.09c %>%
+
+  # Join in filler t-test results
+  full_join(select(subject.ttest.09c, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
+            by=c("uniqueid")) %>% 
+  
+  mutate(
+    # Reorder subjects based on filler test p-value
+    uniqueid=fct_reorder(uniqueid, filler.p.value),
+    
+    plot_group=ifelse(condition_0 == "filler", condition_1,
+                      "exp")) %>%
+  
+  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
+    
+    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
+    scale_color_discrete(name="Stimulus type",
+                         labels=c("exp"="Experimental item",
+                                  "empty"="Empty filler", "full"="Full filler")) +
+  
+    # Plot boxplots for fillers
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "full")) +
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "empty")) +
+  
+    # Shade based on exclusion
+    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
+              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
+                  ymin = 0, ymax = 100, fill = exclude),
+              alpha = 0.1, color=NA) +
+    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
+  
+    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.09c)) +
+    scale_y_continuous(name="Fullness rating")
+```
+
+We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulation *Given entity* (sum-coded; Location = -1, Agent/Theme = 1) as a fixed effect in the regression.
+We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
+
+```{r 09c regression, echo=FALSE}
+contrasts(df.09c.filtered$agent_is_given) = c(-1, 1)
+
+model.09c = xfun::cache_rds({
+  brm(slider_value ~ agent_is_given
+                   + (agent_is_given | nonalternating_predicate/item_id)
+                   + (agent_is_given | uniqueid),
+      data=df.09c.filtered %>%
+        filter(condition_0 != "filler") %>% 
+        mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
+      family="beta")
+})
+```
+
+```{r 09c HDIs}
+model.09c.fixef_draws = model.09c %>%
+  spread_draws(b_agent_is_given1, `r_nonalternating_predicate:item_id.+Intercept]`, regex=TRUE)
+model.09c.hdis = model.09c.fixef_draws %>%
+  select(-starts_with(".")) %>% map(~{hdci(.)})
+model.09c.hdis
+```
 
 ### Critical explaining-away experiment {#experiment-swarm-comprehension-full}
 
