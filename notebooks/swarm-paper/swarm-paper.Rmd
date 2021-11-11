@@ -555,6 +555,23 @@ model.08$df_controlled %>%
   # scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", "bad"="Ungrammatical fillers"))
 ```
 
+```{r 08 raw responses by condition, fig.cap="Acceptability ratings by condition, compared to grammatical and ungrammatical filler items. Error bars indicate standard error."}
+df.08.filtered %>%
+  ggplot(aes(x=condition, y=slider_value)) +
+    stat_summary(fun=mean, geom="bar") +
+    stat_summary(fun.data=mean_se, geom="errorbar") +
+    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
+    scale_x_discrete(name="Condition", labels=c("cLgL"="cLgL", "cLgA"="cLgA",
+                                                "cAgA"="cAgA", "cAgL"="cAgL",
+                                                "bad"="Ungrammatical fillers",
+                                                "good"="Grammatical fillers"))
+```
+```{r 08 raw responses by condition and item, fig.cap="Acceptability ratings by condition and item. Error bars indicate standard error."}
+plot_acceptability_by_item(df.08.filtered, condition,
+                           condition_labels=c("cLgL"="cLgL", "cLgA"="cLgA",
+                                              "cAgA"="cAgA", "cAgL"="cAgL"))
+```
+
 ### Basic comprehension experiment {#experiment-swarm-comprehension-basic}
 
 To the best of our knowledge, no empirical test of the meaning contrast between the A- and L-construction exists. We first ran an experiment to test whether English speakers recognized this meaning contrast.
