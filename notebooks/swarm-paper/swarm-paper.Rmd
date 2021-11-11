@@ -670,11 +670,47 @@ TODO report results
 
 ### Production experiment {#experiment-swarm-production-givenness}
 
+```{r load 03 data}
+experiment_names = c("03_production_swarm-givenness")
+
+df.03 = raw_df %>%
+  filter(experiment_id %in% experiment_names,
+         trial_type == "survey-multi-choice-ext") %>% 
+  
+  # TODO double check agent_is_given coding here.
+  mutate(agent_is_given = ifelse(condition_0 %in% c(0, 1), condition_0 == 1, NA),
+         agent_is_subject = ifelse(condition_0 == "filler", NA, survey_answer == "agent")) %>% 
+  
+  merge_materials_and_filter
+
+# # Drop subjects with the wrong number of filler items.
+# # TODO what is causing this problem in the first place?
+# df.04.drops = df.04 %>% 
+#   filter(condition_0 == "filler") %>% 
+#   group_by(uniqueid) %>% 
+#     summarise(n=n()) %>% 
+#   filter(n != num_fillers.04)
+# df.04 = df.04 %>% anti_join(df.04.drops, by=c("uniqueid"))
+
+# Demographic information
+df.03.demo = raw_df %>% 
+  # Perform same exclusion as above
+  # anti_join(df.04.drops, by=c("uniqueid")) %>%
+  filter(experiment_id %in% experiment_names,
+         trial_type %in% c("survey-text", "survey-multi-choice"))
+```
+
+
 We next confirmed that speakers were willing to select between the A-construction and L-construction based on given entities in the discourse.
 TODO ref theoretical reason to expect this.
 This has not been empirically confirmed for these particular constructions. TODO what are the reasons to think *a priori* that realizing as subject might be under different pressures than alternation of postverbal content as in the dative alternation?
 
 #### Participants
+
+```{r, results='asis'}
+# TODO exclude native speakers
+demo_chunk(df.03.demo)
+```
 
 #### Procedure
 
@@ -687,8 +723,30 @@ We asked subjects to judge which was the more "natural" of the two stimuli. The 
 TODO what did we do here?
 
 ```{r}
-# TODO do exclusion here
+# Exclude subjects whose success rate is lower than this threshold
+exclude_threshold.03 = 0.7
+
+# Early phases of data collection revealed that some fillers don't illustrate
+# the contrast appropriately. (Subjects otherwise performing well missed these
+# items.) We'll drop them from the exclusion routine.
+drop_fillers.03 = c(6)
+
+subject.exclude.03 = df.03 %>%
+  filter(
+    condition_0 == "filler",
+    !(item_id %in% drop_fillers.03)) %>% 
+  mutate(success=survey_answer == "good") %>% 
+  group_by(uniqueid) %>% 
+    summarise(success_rate=mean(success)) %>% 
+  mutate(exclude=success_rate < exclude_threshold.03)
+Nretained.03 = nrow(subject.exclude.03 %>% filter(!exclude))
+
+df.03.filtered = df.03 %>% 
+  left_join(subject.exclude.03, by=c("uniqueid")) %>% 
+  filter(!exclude)
 ```
+
+`r Nretained.03` subjects (`r Nretained.03 / nrow(subject.exclude.03) * 100`%) were retained by this criterion.
 
 #### Results
 
@@ -696,8 +754,17 @@ TODO what did we do here?
 # TODO render controlled response figure
 ```
 
-```{r cache=TRUE}
-# TODO Bayesian regression
+```{r 03 regression, echo=FALSE}
+lmer.03 = xfun::cache_rds({
+  glmer(agent_is_subject ~ agent_is_given
+                         + (agent_is_given | item_id) 
+                         + (agent_is_given | uniqueid),
+        family="binomial",
+        data=df.03.filtered %>% 
+          filter(condition_0 != "filler"),
+        control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
+        contrasts=list(agent_is_given=c(-1, 1)))
+})
 ```
 
 
