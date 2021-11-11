@@ -1093,6 +1093,26 @@ model.04.hdis
 ```
 
 
+```{r 04 plot raw responses, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
+df.04.filtered %>% 
+  ggplot(aes(x=location_is_subject, fill=agent_is_given, y=slider_value)) +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
+                 geom="bar", position="dodge") +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
+                 geom="errorbar", position="dodge") +
+  
+    stat_summary(aes(x=1, fill=NULL, color=condition_1),
+                 data=. %>% filter(condition_1 == "full"), fun.data=mean_se,
+                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
+    stat_summary(aes(x=1, fill=NULL, color=condition_1),
+                 data=. %>% filter(condition_1 == "empty"), fun.data=mean_se,
+                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
+  
+    scale_fill_discrete("Given entity", labels=c(`TRUE`="Agent", `FALSE`="Location")) +
+    scale_x_discrete("Construction type", labels=c(`TRUE`="L-construction", `FALSE`="A-construction")) +
+    scale_color_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
+```
+
 # References 
 
 ```{r}
