@@ -758,7 +758,7 @@ lmer.03 = xfun::cache_rds({
 ### Critical explaining-away experiment {#experiment-swarm-comprehension-full}
 
 ```{r load 04 data}
-experiment_names = c("04_comprehension_swarm-full", "09_comprehension_swarm_full-nonalternating-control")
+experiment_names = c("04_comprehension_swarm-full", "09_comprehension_swarm-full-nonalternating-control")
 num_fillers.04 = 12
 
 df.04 = raw_df %>%
@@ -800,6 +800,7 @@ df.04.demo = raw_df %>%
 
 ```{r, results='asis'}
 # TODO exclude native speakers
+# TODO figure out the person who wrote 1983
 demo_chunk(df.04.demo)
 ```
 
