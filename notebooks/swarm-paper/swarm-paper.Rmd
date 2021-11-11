@@ -806,8 +806,20 @@ df.03.filtered = df.03 %>%
 
 #### Results
 
-```{r}
-# TODO render controlled response figure
+```{r 03 raw response plot}
+df.03.filtered %>% 
+  filter(condition_0 != "filler") %>% 
+  ggplot(aes(x=condition_0, y=as.numeric(agent_is_subject))) +
+    stat_summary(geom="bar", fun=mean, position="dodge") +
+  
+    # TODO error bar
+  
+    # reference line at y = 0.5
+    geom_hline(yintercept=0.5) +
+  
+    scale_x_discrete(name="Given entity", labels=c(`0`="Location", `1`="Agent")) +
+    scale_y_continuous(name="Proportion responding with agent as subject",
+                       limits=c(0, 1))
 ```
 
 ```{r 03 regression, echo=FALSE}
