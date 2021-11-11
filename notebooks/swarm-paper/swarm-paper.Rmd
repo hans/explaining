@@ -522,7 +522,7 @@ model.08$df_controlled %>%
 
 To the best of our knowledge, no empirical test of the meaning contrast between the A- and L-construction exists. We first ran an experiment to test whether English speakers recognized this meaning contrast.
 
-```{r}
+```{r load 00 data}
 experiment_name = "00_comprehension_swarm-construction-meaning"
 num_fillers.00 = 12
 
@@ -588,8 +588,6 @@ df.00.filtered = df.00 %>%
 #### Results
 
 ```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
-# TODO why are there NA excluded values here? set of subjects should be the same
-# in df.00 as in subject.ttest.00
 df.00 %>%
   
   # Join in filler t-test results
@@ -676,15 +674,6 @@ df.03 = raw_df %>%
          agent_is_subject = ifelse(condition_0 == "filler", NA, survey_answer == "agent")) %>% 
   
   merge_materials_and_filter
-
-# # Drop subjects with the wrong number of filler items.
-# # TODO what is causing this problem in the first place?
-# df.04.drops = df.04 %>% 
-#   filter(condition_0 == "filler") %>% 
-#   group_by(uniqueid) %>% 
-#     summarise(n=n()) %>% 
-#   filter(n != num_fillers.04)
-# df.04 = df.04 %>% anti_join(df.04.drops, by=c("uniqueid"))
 
 # Demographic information
 df.03.demo = raw_df %>% 
