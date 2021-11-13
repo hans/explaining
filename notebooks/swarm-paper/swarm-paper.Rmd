@@ -426,7 +426,7 @@ We used a maximal random effect structure, including all logically possible by-s
 # #1 is easy to fix. #2 we need to recover the correct materials for fillers
 # For now, going to leave out those control variables.
 
-model.02 = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, c(0, 1), bad_condition)})
+model.02 = xfun::cache_rds({do_acceptability_regression(df.02.filtered, condition_1, c(0, 1), "bad")})
 model.02.print = papaja::apa_print(model.02$model)
 ```
 
@@ -710,6 +710,7 @@ model.00.tidy.location_is_subject = model.00.tidy %>%
 #   map(~hdci(.x))
 ```
 We find a positive effect of *Construction type* (`r print_brms_coef(model.00, "location_is_subject1")`).
+TODO what else do I say here.
 
 ```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
 df.00 %>%
@@ -762,6 +763,8 @@ df.00 %>%
 ```
 
 #### Conclusion
+
+TODO
 
 ### Production experiment {#experiment-swarm-production-givenness}
 
