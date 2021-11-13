@@ -306,20 +306,24 @@ materials_df <- na.omit(unique(all_items$materials_id)) %>%
 ```
 
 
-## Procedure
+# Procedure
+
+## Stimulus design {#stimuli}
 
 | $\rightarrow$ Given entity <br/> $\downarrow$ Construction | Agent/Theme | Location |
 | - | - | - |
 | A-construction | The town is trying to clean up the debris. It is flowing in the river. | The town is trying to clean up the river. Debris is flowing in it. |
 | L-construction | The town is trying to clean up the debris. The river is flowing with it. | The town is trying to clean up the river. It is flowing with debris. | 
 
-Table: An example experimental item varying across two factors: Given entity (Agent/Theme vs. Location) and Construction (A-construction vs. L-construction). TODO Bring in real prefix sentence, and maybe pick a better one. (ref:item-example)
+Table: (\#tab:item-example) An example experimental item varying across two factors: *Given entity* in the first sentence (Agent/Theme vs. Location) and *Construction type* of the second sentence (A-construction vs. L-construction).
 
-(ref:stimuli) Participants were shown English passages consisting of two sentences. Each passage varied within-participant and within-item by two factors: *Given entity* and *Construction type*. An example item in four varying conditions is shown in \@ref(item-example).
+Each experimental item related three elements: a **Verb** and two plausible event participants, an **Agent/Theme** and a **Location**. We selected verbs which we believed could naturally appear in both the A-construction and L-construction (but later verified this with acceptability rating studies; see \@ref(experiment-swarm-acceptability)). For each item we designed two stimulus sentences: a first sentence which established one of the two event participants as a referent (the *Given entity*) in the discourse, expressed in varying syntactic positions; and a second sentence which used the Verb in either the A-construction or L-construction (the *Construction type*) with the two participants.
 
-The first sentence of each item established one of two possible event participants as a discourse referent: either the agent/theme (*debris*) or the location (*the river*), usually expressed using the exact same lexical item as in the following sentence, and in varying syntactic positions. (TODO introduce notion of establishing discourse referent.)
+The participant established as given in the first sentence was expressed pronominally in the second sentence. Non-pronominal Agent/Theme participants were realized as bare NPs, while non-pronominal locations were realized with definite determiners (*the* or *his/her/their* depending on the context). The A-construction used locative prepositions matching the path and manner of motion coded by the verb. 
 
-The second sentence then used either the A-construction or L-construction to express the relevant relation between Agent/Theme and Location. The participant established as given in the first sentence was expressed pronominally in the second sentence. Non-pronominal Agent/Theme participants were realized as bare NPs, while non-pronominal locations were realized with definite determiners (*the* or *his/her/their* depending on the context). The A-construction used locative prepositions matching the path and manner of motion coded by the verb. 
+\@ref(tab:item-example) shows an example item in the four possible combinations of these conditions. We varied these factors of *Given entity* and *Construction type* both within-participant and within-item; these assignments were pseudo-randomly counterbalanced in all experiments.
+
+<!-- TODO introduce notion of establishing discourse referent. -->
 
 ```{r set up running example, echo=FALSE}
 example = list(
@@ -342,8 +346,6 @@ example$lbl_Lcons = paste0("L-construction<br/>(*", example$Lcons, "*)")
 example$lbl_Acons = paste0("A-construction<br/>(*", example$Acons, "*)")
 ```
 
-### Experimental structure
-
 | Experiment | Behavior | Guiding question |
 | - | - | - |
 | [1](#experiment-swarm-comprehension-full) | Comprehension | Are comprehenders' meaning inferences sensitive to evident features of discourse structure? |
@@ -358,9 +360,9 @@ Table: Overview of experiments.
 
 ### Acceptability experiment {#experiment-swarm-acceptability}
 
-We first confirmed that our uses of the A-construction and L-construction were deemed acceptable by English speakers.
+This control experiment confirmed that our uses of the A-construction and L-construction were deemed acceptable by English speakers.
 
-```{r load 02 data}
+```{r load 02 data, echo=FALSE}
 experiment_name = "02_acceptability_swarm"
 
 df.02 = raw_df %>%
@@ -407,40 +409,8 @@ We used subjects' performance on filler items to design an exclusion criterion. 
 
 #### Results
 
-```{r 02 slider visualization, cache=TRUE}
-df.02 %>%
-  
-  # Join in filler t-test results
-  full_join(select(subject.ttest.02, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
-            by=c("uniqueid")) %>% 
-  
-  mutate(
-    # Reorder subjects based on filler test p-value
-    uniqueid=fct_reorder(uniqueid, filler.p.value)) %>%
-  
-  ggplot(aes(x=uniqueid, y=slider_value, color=condition_1)) +
-    
-    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(condition_1 %in% c(0, 1))) +
-    scale_color_discrete(name="Stimulus condition",
-                         labels=c(`0`="L-construction", `1`="A-construction",
-                                  "bad"="Ungrammatical filler", "good"="Grammatical filler")) +
-  
-    # Plot boxplots for fillers
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "good")) +
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "bad")) +
-  
-    # Shade based on exclusion
-    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
-              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
-                  ymin = 1, ymax = 7, fill = exclude),
-              alpha = 0.1, color=NA) +
-    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
-  
-    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.02)) +
-    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
-```
-
-We evaluated the effect of our experimental manipulation using a mixed-effects linear regression model, comparing acceptability ratings on each construction (A-construction or L-construction) to ungrammatical items. The fixed effect of interest was this *Contrast* factor (treatment-coded; ungrammatical items = 0, A-construction = 1, L-construction = 1). We included as sum-coded covariates *Countability* (whether the agent/theme was a mass or count noun) and *Animacy* (whether the agent/theme expressed an animate participant). Finally, we included interaction terms between these control variables and the *Contrast* factor.
+We evaluated the effect of our experimental manipulation using a mixed-effects linear regression model, comparing acceptability ratings on each construction (A-construction or L-construction) to ungrammatical items. The fixed effect of interest was this *Contrast* factor (treatment-coded; ungrammatical items = 0, A-construction = 1, L-construction = 1).
+<!-- We included as sum-coded covariates *Countability* (whether the agent/theme was a mass or count noun) and *Animacy* (whether the agent/theme expressed an animate participant). Finally, we included interaction terms between these control variables and the *Contrast* factor. -->
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
 ```{r 02 regression, echo=FALSE}
@@ -455,14 +425,14 @@ model.02.print = papaja::apa_print(model.02$model)
 The regression shows a significant main effect relative to ungrammatical English items for both constructions (A-construction: `r model.02.print$statistic$contrast1`; L-construction: `r model.02.print$statistic$contrast0`).
 
 ```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items, after controlling for by-item and by-subject random effects."}
-# TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
-# After controlling for estimated subject/item effets, some responses are higher than 7!
-model.02$df_controlled %>% 
-  ggplot(aes(x=condition_1, y=slider_value_controlled)) +
-  geom_boxplot() +
-  geom_quasirandom(alpha=0.3) +
-  scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
-  scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", "bad"="Ungrammatical fillers"))
+# # TODO this is a very unintuitive graph, because it reveals how our regression assumptions are violated :)
+# # After controlling for estimated subject/item effets, some responses are higher than 7!
+# model.02$df_controlled %>% 
+#   ggplot(aes(x=condition_1, y=slider_value_controlled)) +
+#   geom_boxplot() +
+#   geom_quasirandom(alpha=0.3) +
+#   scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
+#   scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", "bad"="Ungrammatical fillers"))
 ```
 ```{r 02 raw responses by condition, fig.cap="Acceptability ratings by condition, compared to grammatical and ungrammatical filler items. Error bars indicate standard error."}
 df.02.filtered %>%
@@ -538,42 +508,6 @@ We used subjects' performance on filler items to design an exclusion criterion. 
 `r Nretained.08` subjects (`r Nretained.08 / nrow(subject.ttest.08) * 100`%) were retained by this criterion.
 
 #### Results
-
-```{r 08 slider visualization, cache=TRUE}
-df.08 %>%
-
-  # Join in filler t-test results
-  full_join(select(subject.ttest.08, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
-            by=c("uniqueid")) %>% 
-  
-  mutate(
-    # Reorder subjects based on filler test p-value
-    uniqueid=fct_reorder(uniqueid, filler.p.value),
-    
-    plot_group=ifelse(condition_0 == "filler", condition_1,
-                      "exp")) %>%
-  
-  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
-    
-    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
-    scale_color_discrete(name="Stimulus type",
-                         labels=c("exp"="Experimental item",
-                                  "bad"="Ungrammatical filler", "good"="Grammatical filler")) +
-  
-    # Plot boxplots for fillers
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "good")) +
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "bad")) +
-  
-    # Shade based on exclusion
-    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
-              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
-                  ymin = 1, ymax = 7, fill = exclude),
-              alpha = 0.1, color=NA) +
-    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
-  
-    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.08)) +
-    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
-```
 
 ```{r 08 regression, echo=FALSE}
 model.08 = xfun::cache_rds({
@@ -737,43 +671,6 @@ model.00.tidy.location_is_subject = model.00.tidy %>%
 ```
 We find a positive effect of *Construction type* (`r print_brms_coef(model.00, "location_is_subject1")`).
 TODO what else do I say here.
-
-```{r 00 slider visualization, echo=FALSE, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
-df.00 %>%
-  
-  # Join in filler t-test results
-  left_join(select(subject.ttest.00, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
-            by=c("uniqueid")) %>% 
-  
-  mutate(
-    # Reorder subjects based on p-value of filler t-test
-    uniqueid=fct_reorder(uniqueid, filler.p.value),
-    
-    plot_group=ifelse(condition_0 == "filler", condition_1,
-                      "exp")) %>%
-  
-  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
-    
-    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
-    scale_color_discrete(name="Stimulus type",
-                         labels=c("exp"="Experimental item",
-                                  "empty"="Empty filler", "full"="Full filler")) +
-  
-    # Plot boxplots for fillers
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "full")) +
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "empty")) +
-  
-    # Shade based on exclusion
-    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
-              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
-                  ymin = 0, ymax = 100, fill = exclude),
-              alpha = 0.1, color=NA) +
-    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
-  
-    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.00)) +
-    scale_y_continuous(name="Fullness rating") +
-    theme()
-```
 
 #### Conclusion
 
@@ -1087,42 +984,6 @@ df.04.filtered = df.04 %>%
 
 #### Results
 
-```{r 04 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
-df.04 %>%
-
-  # Join in filler t-test results
-  full_join(select(subject.ttest.04, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
-            by=c("uniqueid")) %>% 
-  
-  mutate(
-    # Reorder subjects based on filler test p-value
-    uniqueid=fct_reorder(uniqueid, filler.p.value),
-    
-    plot_group=ifelse(condition_0 == "filler", condition_1,
-                      "exp")) %>%
-  
-  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
-    
-    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
-    scale_color_discrete(name="Stimulus type",
-                         labels=c("exp"="Experimental item",
-                                  "empty"="Empty filler", "full"="Full filler")) +
-  
-    # Plot boxplots for fillers
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "full")) +
-    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "empty")) +
-  
-    # Shade based on exclusion
-    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
-              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
-                  ymin = 0, ymax = 100, fill = exclude),
-              alpha = 0.1, color=NA) +
-    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
-  
-    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.04)) +
-    scale_y_continuous(name="Fullness rating")
-```
-
 We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulations *Given entity* (sum-coded; Location = -1, Agent/Theme = 1) and *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as fixed effects in the regression, along with the interaction of the two variables. (Note that both manipulations are coded such that we should expect a higher rating on the fullness measure for positive values of the factor.)
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
@@ -1225,7 +1086,149 @@ materials_df %>%
                caption="Filler items used in production experiments.")
 ```
 
+## Raw response data
 
+```{r 02 slider visualization, cache=TRUE, fig.cap="Visualization of slider response behavior in the single-sentence acceptability experiment by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items."}
+df.02 %>%
+  
+  # Join in filler t-test results
+  full_join(select(subject.ttest.02, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
+            by=c("uniqueid")) %>% 
+  
+  mutate(
+    # Reorder subjects based on filler test p-value
+    uniqueid=fct_reorder(uniqueid, filler.p.value)) %>%
+  
+  ggplot(aes(x=uniqueid, y=slider_value, color=condition_1)) +
+    
+    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(condition_1 %in% c(0, 1))) +
+    scale_color_discrete(name="Stimulus condition",
+                         labels=c(`0`="L-construction", `1`="A-construction",
+                                  "bad"="Ungrammatical filler", "good"="Grammatical filler")) +
+  
+    # Plot boxplots for fillers
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "good")) +
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "bad")) +
+  
+    # Shade based on exclusion
+    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
+              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
+                  ymin = 1, ymax = 7, fill = exclude),
+              alpha = 0.1, color=NA) +
+    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
+  
+    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.02)) +
+    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
+```
+
+```{r 08 slider visualization, cache=TRUE, fig.cap="Visualization of slider response behavior in the two-sentence acceptability experiment by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items."}
+df.08 %>%
+
+  # Join in filler t-test results
+  full_join(select(subject.ttest.08, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
+            by=c("uniqueid")) %>% 
+  
+  mutate(
+    # Reorder subjects based on filler test p-value
+    uniqueid=fct_reorder(uniqueid, filler.p.value),
+    
+    plot_group=ifelse(condition_0 == "filler", condition_1,
+                      "exp")) %>%
+  
+  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
+    
+    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
+    scale_color_discrete(name="Stimulus type",
+                         labels=c("exp"="Experimental item",
+                                  "bad"="Ungrammatical filler", "good"="Grammatical filler")) +
+  
+    # Plot boxplots for fillers
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "good")) +
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "bad")) +
+  
+    # Shade based on exclusion
+    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
+              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
+                  ymin = 1, ymax = 7, fill = exclude),
+              alpha = 0.1, color=NA) +
+    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
+  
+    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.08)) +
+    scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7))
+```
+
+```{r 00 slider visualization, echo=FALSE, fig.cap="Visualization of slider response behavior in the basic comprehension experiment by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
+df.00 %>%
+  
+  # Join in filler t-test results
+  left_join(select(subject.ttest.00, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
+            by=c("uniqueid")) %>% 
+  
+  mutate(
+    # Reorder subjects based on p-value of filler t-test
+    uniqueid=fct_reorder(uniqueid, filler.p.value),
+    
+    plot_group=ifelse(condition_0 == "filler", condition_1,
+                      "exp")) %>%
+  
+  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
+    
+    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
+    scale_color_discrete(name="Stimulus type",
+                         labels=c("exp"="Experimental item",
+                                  "empty"="Empty filler", "full"="Full filler")) +
+  
+    # Plot boxplots for fillers
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "full")) +
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "empty")) +
+  
+    # Shade based on exclusion
+    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
+              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
+                  ymin = 0, ymax = 100, fill = exclude),
+              alpha = 0.1, color=NA) +
+    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
+  
+    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.00)) +
+    scale_y_continuous(name="Fullness rating") +
+    theme()
+```
+
+```{r 04 slider visualization, echo=FALSE, fig.cap="Visualization of slider response behavior in the full comprehension experiment by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
+df.04 %>%
+
+  # Join in filler t-test results
+  full_join(select(subject.ttest.04, uniqueid, exclude, p.value) %>% rename(filler.p.value=p.value),
+            by=c("uniqueid")) %>% 
+  
+  mutate(
+    # Reorder subjects based on filler test p-value
+    uniqueid=fct_reorder(uniqueid, filler.p.value),
+    
+    plot_group=ifelse(condition_0 == "filler", condition_1,
+                      "exp")) %>%
+  
+  ggplot(aes(x=uniqueid, y=slider_value, color=plot_group)) +
+    
+    geom_quasirandom(groupOnX=TRUE, alpha=0.4, data=. %>% filter(plot_group == "exp")) +
+    scale_color_discrete(name="Stimulus type",
+                         labels=c("exp"="Experimental item",
+                                  "empty"="Empty filler", "full"="Full filler")) +
+  
+    # Plot boxplots for fillers
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "full")) +
+    geom_boxplot(alpha=0.2, data=. %>% filter(condition_1 == "empty")) +
+  
+    # Shade based on exclusion
+    geom_rect(data=. %>% group_by(uniqueid) %>% filter(row_number() == 1),
+              aes(xmin = as.numeric(uniqueid) - 0.5, xmax = as.numeric(uniqueid) + 0.5,
+                  ymin = 0, ymax = 100, fill = exclude),
+              alpha = 0.1, color=NA) +
+    scale_fill_discrete(name="Excluded?", labels=c(`FALSE`="No", `TRUE`="Yes")) +
+  
+    scale_x_discrete(name="Subject", labels=1:nrow(subject.ttest.04)) +
+    scale_y_continuous(name="Fullness rating")
+```
 
 # References 
 
