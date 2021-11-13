@@ -263,7 +263,7 @@ plot_acceptability_by_item = function(df, condition_variable, condition_labels) 
 # Prints MAP estimate along with 95% CrI.
 print_brms_coef = function(model, variable) {
   coef_data = model %>% tidy() %>% filter(term == variable)
-  return(paste0("$\beta =$ ",
+  return(paste0("$\\beta =$ ",
                 printnum(as.numeric(coef_data %>% pull(estimate))),
                 ", 95% CrI: [",
                 printnum(as.numeric(coef_data %>% pull(conf.low))),
@@ -663,7 +663,7 @@ df.00.filtered = df.00 %>%
 
 #### Results
 
-```{r 00 plot raw responses, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
+```{r 00 plot raw responses, echo=FALSE, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
 df.00.filtered %>% 
   ggplot(aes(x=condition_1, y=slider_value)) +
     stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
@@ -703,7 +703,7 @@ model.00.tidy.location_is_subject = model.00.tidy %>%
   filter(term == "location_is_subject1")
 ```
 
-```{r 00 hdis}
+```{r 00 hdis, echo=FALSE}
 # model.00.hdis = model.00 %>% 
 #   spread_draws(b_location_is_subject1) %>% 
 #   select(b_location_is_subject1) %>% 
@@ -712,7 +712,7 @@ model.00.tidy.location_is_subject = model.00.tidy %>%
 We find a positive effect of *Construction type* (`r print_brms_coef(model.00, "location_is_subject1")`).
 TODO what else do I say here.
 
-```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
+```{r 00 slider visualization, echo=FALSE, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
 df.00 %>%
   
   # Join in filler t-test results
