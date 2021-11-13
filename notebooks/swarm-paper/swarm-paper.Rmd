@@ -827,7 +827,7 @@ We used subjects' behavior on filler items to determine an exclusion criterion. 
 `r Nretained.03` subjects (`r Nretained.03 / nrow(subject.exclude.03) * 100`%) were retained by this criterion.
 #### Results
 
-```{r 03 raw response plot}
+```{r 03 raw response plot, fig.cap="Proportion of subjects choosing A-construction as a function of the *Given entity* manipulation. Horizontal line indicates 50% (response due to random guessing)."}
 df.03.filtered %>% 
   filter(condition_0 != "filler") %>% 
   ggplot(aes(x=condition_0, y=as.numeric(agent_is_subject))) +
@@ -839,12 +839,13 @@ df.03.filtered %>%
     geom_hline(yintercept=0.5) +
   
     scale_x_discrete(name="Given entity", labels=c(`0`="Location", `1`="Agent")) +
-    scale_y_continuous(name="Proportion responding with agent as subject",
+    scale_y_continuous(name="Proportion choosing A-construction",
                        limits=c(0, 1))
 ```
+\@ref(03 raw response plot) shows the proportion of subjects who chose completion sentences using the A-construction as a function of the *Given entity* in the first sentence. We see that subjects prefer to use the A-construction when the Agent/Theme is established as given by the previous sentence.
 
 ```{r 03 regression, echo=FALSE}
-lmer.03 = xfun::cache_rds({
+model.03 = xfun::cache_rds({
   glmer(agent_is_subject ~ agent_is_given
                          + (agent_is_given | item_id) 
                          + (agent_is_given | uniqueid),
@@ -854,10 +855,13 @@ lmer.03 = xfun::cache_rds({
         control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)),
         contrasts=list(agent_is_given=c(-1, 1)))
 })
+model.03.print = apa_print(model.03)
 ```
 
+We confirmed this effect quantitatively with a mixed-effects logistic regression, predicting the binary response (L-construction = 0; A-construction = 1) as a function of the *Given entity* (sum-coded; Location given = -1, Agent/Theme given = 1). The regression included the maximal random effects structure by subject and item.
+We found a significant effect of the manipulation of *Given entity* (`r model.03.print$full_result$agent_is_given1`).
 
-#### Conclusion
+This experiment confirmed that speakers' construction choice is sensitive to discourse structure: specifically, that speakers change their choice of construction in order to place given entities in subject position.
 
 ### Control comprehension experiment {#experiment-swarm-comprehension-control}
 
