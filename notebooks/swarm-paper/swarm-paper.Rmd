@@ -73,6 +73,9 @@ library(lmerTest)
 
 # Plotting
 library(ggbeeswarm)
+
+# APA
+library(papaja)
 ```
 ```{r custom functions, include=FALSE}
 prepare_demo = function(demo_df) {
@@ -233,7 +236,7 @@ do_acceptability_regression = function(df, condition_col, exp_conditions, bad_co
               model=model, df_controlled=df_controlled))
 }
 ```
-```{r shared plotting functions, include=FALSE}
+```{r shared plotting and printing functions, include=FALSE}
 plot_acceptability_by_item = function(df, condition_variable, condition_labels) {
   df %>% 
     ggplot(aes(x=item_id, y=slider_value, fill={{condition_variable}})) +
@@ -255,10 +258,27 @@ plot_acceptability_by_item = function(df, condition_variable, condition_labels) 
       scale_color_discrete(name="Filler items", labels=c("bad"="Ungrammatical fillers",
                                                          "good"="Grammatical fillers"))
 }
+
+# Print statistics on a coefficient saved in a BRMS model fit.
+# Prints MAP estimate along with 95% CrI.
+print_brms_coef = function(model, variable) {
+  coef_data = model %>% tidy() %>% filter(term == variable)
+  return(paste0("$\beta =$ ",
+                printnum(as.numeric(coef_data %>% pull(estimate))),
+                ", 95% CrI: [",
+                printnum(as.numeric(coef_data %>% pull(conf.low))),
+                ", ",
+                printnum(as.numeric(coef_data %>% pull(conf.high))),
+                "]"))
+}
 ```
 ```{r shared chunks, include=FALSE}
 describe_stimuli_two_sentence = function() {
   return("We presented subjects with the two-sentence stimuli described in \\@ref(stimuli). We manipulated the two relevant factors (*Given entity*, determined by the first sentence, establishing either the Agent/Theme or Location as a referent; and *Construction type*, evident in the second sentence, using either the A-construction or L-construction). Both manipulations were within-subject and within-item, pseudo-randomly counterbalanced between subjects.")
+}
+describe_copout = function() {
+  return("Beneath the slider widget was a checkbox labeled \"This sentence doesn't make sense to me.\" If a subject checked this box, the slider widget would be disabled and they would be allowed to proceed to the next trial.")
+  # TODO talk about what happened?
 }
 ```
 ```{r load raw data, echo=FALSE}
@@ -578,6 +598,7 @@ To the best of our knowledge, no empirical test of the meaning contrast between 
 
 ```{r load 00 data}
 experiment_name = "00_comprehension_swarm-construction-meaning"
+fillers_id.00 = "fillers/swarm_comprehension-000-base"
 num_fillers.00 = 12
 
 df.00 = raw_df %>%
@@ -613,19 +634,20 @@ demo_chunk(df.00.demo)
 
 #### Procedure
 
-Subjects were presented with sentences drawn from our materials using either the A-construction or L-construction. This construction type was varied both within-subject and within-item, and the assignment was pseudo-randomly counterbalanced across subjects.
-
-TODO describe fillers.
+Subjects were presented with sentences drawn from our materials using either the A-construction or L-construction. This construction type was varied both within-subject and within-item, and the assignment was pseudo-randomly counterbalanced across subjects. The full list of experimental materials is shown in \@ref(tbl comp 00 materials).
 
 In each trial, subjects were asked: "How much/many \<Agent/Theme> is/are in/on \<Location>?" They responded using a slider interface whose value ranged from 0 to 100. The ends of the slider were labeled to suggest a scale relative to the size of the Location, where a value of 100 indicates that the Location is as full as it could be of the Agent/Theme, and a value of 0 indicates that the Location contains none of the Agent/Theme.
+`r describe_copout()`
 
-TODO include vignette.
+```{r 00 vignette, fig.cap="Trial interface for the basic comprehension experiment."}
+knitr::include_graphics("./figs/vignette_00.png")
+```
 
-TODO copout.
+These experimental items (`r nrow(df.00 %>% filter(condition_0 != "filler") %>% select(item_id) %>% distinct())` total) were combined with `r nrow(df.00 %>% filter(condition_0 == "filler") %>% select(item_id) %>% distinct())` filler items, shown in \@ref(tbl comp filler materials). Each filler item presented a single sentence designed to denote a scene with an empty Location (e.g. *`r materials_df %>% filter(materials_id == fillers_id.00, id == 0) %>% pull(sentence)`*) or a full Location (e.g. *`r materials_df %>% filter(materials_id == fillers_id.00, id == 8) %>% pull(sentence)`*).
 
 #### Exclusion criteria {#swarm-slider-exclusion-criteria}
 
-The filler items of the experiment all denoted scenes with clearly empty or full locations. We used subjects' responses on these filler items to check their attention and design an exclusion criterion. For each subject, we collect their responses on filler items with ground-truth "full" locations and ground-truth "empty" locations. We then perform a two-sample one-tailed $t$-test between the two groups. We retain only those subjects for whom this test yields $\text{fullness}_\text{full} > \text{fullness}_\text{empty}$ with a one-tailed $p < 0.1$.
+We used subjects' responses on filler items to check their attention and design an exclusion criterion. For each subject, we collect their responses on filler items with ground-truth "full" Locations and ground-truth "empty" Locations. We then perform a two-sample one-tailed $t$-test between the two groups. We retain only those subjects for whom this test yields $\text{fullness}_\text{full} > \text{fullness}_\text{empty}$ with a one-tailed $p < 0.1$.
 
 ```{r 00 exclusion}
 subject.ttest.00 = run_slider_exclusions(
@@ -640,6 +662,54 @@ df.00.filtered = df.00 %>%
 `r Nretained.00` subjects (`r Nretained.00 / nrow(subject.ttest.00) * 100`%) were retained by this criterion.
 
 #### Results
+
+```{r 00 plot raw responses, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
+df.00.filtered %>% 
+  ggplot(aes(x=condition_1, y=slider_value)) +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
+                 geom="bar") +
+    stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
+                 geom="errorbar") +
+  
+    stat_summary(aes(x=1, fill=condition_1),
+                 data=. %>% filter(condition_1 == "full"), fun.data=mean_se,
+                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
+    stat_summary(aes(x=1, fill=condition_1),
+                 data=. %>% filter(condition_1 == "empty"), fun.data=mean_se,
+                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
+  
+    scale_x_discrete("Construction type", labels=c(`0`="L-construction", `1`="A-construction")) +
+    scale_fill_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
+```
+
+\@ref(00 plot raw responses) shows raw subject slider responses on sentences using the A-construction and L-construction. We see a clear difference between the two construction conditions.
+We evaluated this effect quantitatively using a Bayesian mixed-effects beta regression. We entered the manipulation *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as a fixed effect in the regression.
+We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
+
+```{r 00 regression, echo=FALSE}
+contrasts(df.00.filtered$location_is_subject) = c(-1, 1)
+
+model.00 = xfun::cache_rds({
+  brm(slider_value ~ location_is_subject
+                   + (location_is_subject | item_id)
+                   + (location_is_subject | uniqueid),
+      data=df.00.filtered %>%
+        filter(condition_0 != "filler") %>% 
+        mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
+      family="beta")
+})
+model.00.tidy = model.00 %>% tidy
+model.00.tidy.location_is_subject = model.00.tidy %>%
+  filter(term == "location_is_subject1")
+```
+
+```{r 00 hdis}
+# model.00.hdis = model.00 %>% 
+#   spread_draws(b_location_is_subject1) %>% 
+#   select(b_location_is_subject1) %>% 
+#   map(~hdci(.x))
+```
+We find a positive effect of *Construction type* (`r print_brms_coef(model.00, "location_is_subject1")`).
 
 ```{r 00 slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
 df.00 %>%
@@ -678,43 +748,6 @@ df.00 %>%
     theme()
 ```
 
-
-We evaluated the effect of our experimental manipulation using a Bayesian mixed-effects beta regression. We entered the manipulation *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as a fixed effect in the regression.
-We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
-
-```{r 00 regression, echo=FALSE}
-contrasts(df.00.filtered$location_is_subject) = c(-1, 1)
-
-model.00 = xfun::cache_rds({
-  brm(slider_value ~ location_is_subject
-                   + (location_is_subject | item_id)
-                   + (location_is_subject | uniqueid),
-      data=df.00.filtered %>%
-        filter(condition_0 != "filler") %>% 
-        mutate(slider_value = (slider_value + 1e-4) / (100 + 2 * 1e-4)),
-      family="beta")
-})
-```
-
-```{r 00 plot raw responses, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
-df.00.filtered %>% 
-  ggplot(aes(x=condition_1, y=slider_value)) +
-    stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
-                 geom="bar") +
-    stat_summary(data=. %>% filter(condition_0 != "filler"), fun.data=mean_se,
-                 geom="errorbar") +
-  
-    stat_summary(aes(x=1, fill=condition_1),
-                 data=. %>% filter(condition_1 == "full"), fun.data=mean_se,
-                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
-    stat_summary(aes(x=1, fill=condition_1),
-                 data=. %>% filter(condition_1 == "empty"), fun.data=mean_se,
-                 geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
-  
-    scale_x_discrete("Construction type", labels=c(`0`="L-construction", `1`="A-construction")) +
-    scale_fill_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
-```
-
 ```{r 00 controlled figure}
 # # TODO need to implement the same logic for brms fits, which don't support predict() with random_only
 # # Not confident in the below code. the range of yielded values doesn't make sense
@@ -727,9 +760,6 @@ df.00.filtered %>%
 #     geom_quasirandom(alpha=0.4) +
 #     geom_boxplot(alpha=0.5)
 ```
-
-
-TODO report results
 
 #### Conclusion
 
@@ -993,8 +1023,16 @@ df.04.demo = raw_df %>%
          trial_type %in% c("survey-text", "survey-multi-choice"))
 ```
 
-
 \@ref(experiment-swarm-comprehension-basic) confirmed that English speakers infer a meaning contrast between the A-construction and L-construction. \@ref(experiment-swarm-production) further confirmed that English speakers know to select between the A-construction and L-construction in response to features of the discourse. In this final experiment, we test whether English speakers use this knowledge about the multiple pressures faced by the speaker in selecting a construction to resolve potential meaning ambiguities.
+
+#### Procedure
+
+`r describe_stimuli_two_sentence()`
+We used the same slider interface as described in \@ref(experiment-swarm-comprehension-basic). An example trial is shown in TODO.
+
+The filler items were also the same as those used in \@ref(experiment-swarm-comprehension-basic).
+
+TODO copout
 
 #### Participants
 
@@ -1003,15 +1041,6 @@ df.04.demo = raw_df %>%
 # TODO figure out the person who wrote 1983
 demo_chunk(df.04.demo)
 ```
-
-#### Procedure
-
-`r describe_stimuli_two_sentence()`
-We used the same slider interface as described in \@ref(experiment-swarm-comprehension-basic). An example trial is shown in TODO.
-
-TODO filler items
-
-TODO copout
 
 #### Exclusion criteria
 
@@ -1112,6 +1141,45 @@ df.04.filtered %>%
     scale_x_discrete("Construction type", labels=c(`TRUE`="L-construction", `FALSE`="A-construction")) +
     scale_color_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
 ```
+
+
+# Appendix
+
+## Materials
+
+### Comprehension materials
+
+```{r tbl comp 00 materials}
+# TODO render full sentences
+df.00 %>%
+  filter(materials_id == "swarm-003-drops") %>% 
+  select(materials_id, item_id) %>%
+  distinct() %>% 
+  left_join(materials_df, by=c("materials_id", "item_id"="id")) %>% 
+  select(item_id, A, V, P, `L det`, L) %>% 
+  mutate(`L det`=ifelse(`L det` == "%PERSON1_POSS%", "his/her", `L det`),
+         V=paste0(V, "ing")) %>% 
+  arrange(V) %>% 
+  select(-item_id) %>% 
+  knitr::kable("pipe",
+               col.names=c("Agent/Theme", "Verb", "Preposition", "Location determiner", "Location"),
+               caption="Experimental items used to generate A-construction and L-construction sentences in comprehension experiments.")
+```
+
+### Comprehension fillers
+
+```{r tbl comp filler materials}
+materials_df %>% 
+  filter(materials_id == fillers_id.00) %>% 
+  select(id, rating, sentence, prompt) %>%
+  mutate(rating=R.utils::capitalize(rating)) %>% 
+  arrange(rating, id) %>% 
+  select(-id) %>% 
+  knitr::kable("pipe",
+               col.names=R.utils::capitalize(colnames(.)),
+               caption="Filler items used in comprehension experiments.")
+```
+
 
 # References 
 
