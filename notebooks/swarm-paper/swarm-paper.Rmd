@@ -625,18 +625,11 @@ df.00.demo = raw_df %>%
          trial_type %in% c("survey-text", "survey-multi-choice"))
 ```
 
-#### Participants
-
-```{r, results='asis'}
-# TODO exclude native speakers
-demo_chunk(df.00.demo)
-```
-
 #### Procedure
 
 Subjects were presented with sentences drawn from our materials using either the A-construction or L-construction. This construction type was varied both within-subject and within-item, and the assignment was pseudo-randomly counterbalanced across subjects. The full list of experimental materials is shown in \@ref(tbl comp 00 materials).
 
-In each trial, subjects were asked: "How much/many \<Agent/Theme> is/are in/on \<Location>?" They responded using a slider interface whose value ranged from 0 to 100. The ends of the slider were labeled to suggest a scale relative to the size of the Location, where a value of 100 indicates that the Location is as full as it could be of the Agent/Theme, and a value of 0 indicates that the Location contains none of the Agent/Theme.
+In each trial, subjects were asked: "How much/many \<Agent/Theme> is/are in/on \<Location>?" They responded using a slider widget whose value ranged from 0 to 100. The ends of the slider were labeled to suggest a scale relative to the size of the Location, where a value of 100 indicates that the Location is as full as it could be of the Agent/Theme, and a value of 0 indicates that the Location contains none of the Agent/Theme.
 `r describe_copout()`
 
 ```{r 00 vignette, fig.cap="Trial interface for the basic comprehension experiment."}
@@ -645,11 +638,18 @@ knitr::include_graphics("./figs/vignette_00.png")
 
 These experimental items (`r nrow(df.00 %>% filter(condition_0 != "filler") %>% select(item_id) %>% distinct())` total) were combined with `r nrow(df.00 %>% filter(condition_0 == "filler") %>% select(item_id) %>% distinct())` filler items, shown in \@ref(tbl comp filler materials). Each filler item presented a single sentence designed to denote a scene with an empty Location (e.g. *`r materials_df %>% filter(materials_id == fillers_id.00, id == 0) %>% pull(sentence)`*) or a full Location (e.g. *`r materials_df %>% filter(materials_id == fillers_id.00, id == 8) %>% pull(sentence)`*).
 
+#### Participants
+
+```{r, results='asis'}
+# TODO exclude native speakers
+demo_chunk(df.00.demo)
+```
+
 #### Exclusion criteria {#swarm-slider-exclusion-criteria}
 
 We used subjects' responses on filler items to check their attention and design an exclusion criterion. For each subject, we collect their responses on filler items with ground-truth "full" Locations and ground-truth "empty" Locations. We then perform a two-sample one-tailed $t$-test between the two groups. We retain only those subjects for whom this test yields $\text{fullness}_\text{full} > \text{fullness}_\text{empty}$ with a one-tailed $p < 0.1$.
 
-```{r 00 exclusion}
+```{r 00 exclusion, echo=FALSE}
 subject.ttest.00 = run_slider_exclusions(
   df.00 %>% filter(condition_0 == "filler"), condition_1, full, empty)
 Nretained.00 = nrow(subject.ttest.00 %>% filter(!exclude))
@@ -682,7 +682,7 @@ df.00.filtered %>%
     scale_fill_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
 ```
 
-\@ref(00 plot raw responses) shows raw subject slider responses on sentences using the A-construction and L-construction. We see a clear difference between the two construction conditions.
+\@ref(00 plot raw responses) shows raw subject slider responses on sentences using the A-construction and L-construction. We see that subjects take the use of the L-construction to mean that the Location is more full (relative to the use of the A-construction).
 We evaluated this effect quantitatively using a Bayesian mixed-effects beta regression. We entered the manipulation *Construction type* (sum-coded; A-construction = -1, L-construction = 1) as a fixed effect in the regression.
 We used a maximal random effect structure, including all logically possible by-subject and by-item random slopes and intercepts.
 
@@ -749,19 +749,6 @@ df.00 %>%
     theme()
 ```
 
-```{r 00 controlled figure}
-# # TODO need to implement the same logic for brms fits, which don't support predict() with random_only
-# # Not confident in the below code. the range of yielded values doesn't make sense
-# model.00 %>% tidybayes::add_predicted_draws(newdata=model.frame(model.00) %>% mutate(location_is_subject=NA)) %>% 
-#   group_by(uniqueid, item_id) %>% 
-#   summarise(slider_value_controlled=mean(slider_value) - mean(.prediction)) %>% 
-#   left_join(model.frame(model.00) %>% select(uniqueid, item_id, location_is_subject), by=c("uniqueid", "item_id")) %>% 
-#   
-#   ggplot(aes(x=location_is_subject, y=slider_value_controlled)) +
-#     geom_quasirandom(alpha=0.4) +
-#     geom_boxplot(alpha=0.5)
-```
-
 #### Conclusion
 
 TODO
@@ -770,6 +757,7 @@ TODO
 
 ```{r load 03 data}
 experiment_names = c("03_production_swarm-givenness")
+fillers_id.03 = "fillers/swarm_production-001-twosentences"
 
 df.03 = raw_df %>%
   filter(experiment_id %in% experiment_names,
@@ -787,12 +775,20 @@ df.03.demo = raw_df %>%
   # anti_join(df.04.drops, by=c("uniqueid")) %>%
   filter(experiment_id %in% experiment_names,
          trial_type %in% c("survey-text", "survey-multi-choice"))
+
+filler_example.03 = materials_df %>% filter(materials_id == fillers_id.03, )
 ```
 
-
 We next confirmed that speakers were willing to select between the A-construction and L-construction based on given entities in the discourse.
-TODO ref theoretical reason to expect this.
-This has not been empirically confirmed for these particular constructions. TODO what are the reasons to think *a priori* that realizing as subject might be under different pressures than alternation of postverbal content as in the dative alternation?
+<!-- TODO ref theoretical reason to expect this. -->
+<!-- TODO what are the reasons to think *a priori* that realizing as subject might be under different pressures than alternation of postverbal content as in the dative alternation? -->
+
+#### Procedure
+
+This experiment used the complete two-sentence stimuli described in \@ref(stimuli). Subjects performed forced-choice judgments over pairs of these stimuli which differed only in their second sentence. Thus each trial held a *Given entity* fixed while contrasting the two construction types. The factor of *Given entity* was manipulated within-subject and within-item, and assignment was pseudo-randomly counterbalanced among subjects.
+Each trial presented these two options (in random order) and asked subjects to judge which was the more "natural" of the pair.
+
+The experiment also contained `r nrow(df.03 %>% filter(condition_0 == "filler") %>% select(item_id) %>% distinct())` filler items. Each filler item likewise contrasted pairs of two-sentence stimuli. The items of each pair shared a first sentence but differed in their second sentence, containing either a natural or less natural completion. The less natural items were often grammatical, but contained awkward or rare word orders, or used non-standard multi-word expressions. These filler items are presented in \@ref(tbl prod fillers).
 
 #### Participants
 
@@ -801,17 +797,9 @@ This has not been empirically confirmed for these particular constructions. TODO
 demo_chunk(df.03.demo)
 ```
 
-#### Procedure
-
-This experiment used the complete two-sentence stimuli described in \@ref(stimuli). Subjects performed forced-choice judgments over pairs of these stimuli which differed only in their second sentence. Thus each trial held a *Given entity* fixed while contrasting the two construction types. The factor of *Given entity* was manipulated within-subject and within-item, and assignment was pseudo-randomly counterbalanced among subjects.
-
-We asked subjects to judge which was the more "natural" of the two stimuli. The experiment contained TODO filler items which contrasted grammatical and ungrammatical (or highly unnatural) English text.
-
 #### Exclusion criteria {#swarm-2afc-exclusion-criteria}
 
-TODO what did we do here?
-
-```{r}
+```{r 03 exclusion, echo=FALSE}
 # Exclude subjects whose success rate is lower than this threshold
 exclude_threshold.03 = 0.7
 
@@ -835,8 +823,8 @@ df.03.filtered = df.03 %>%
   filter(!exclude)
 ```
 
+We used subjects' behavior on filler items to determine an exclusion criterion. We retained only subjects who chose the more natural completion in `r round(exclude_threshold.03 * 100)`% of filler trials.
 `r Nretained.03` subjects (`r Nretained.03 / nrow(subject.exclude.03) * 100`%) were retained by this criterion.
-
 #### Results
 
 ```{r 03 raw response plot}
@@ -1182,6 +1170,22 @@ materials_df %>%
                col.names=R.utils::capitalize(colnames(.)),
                caption="Filler items used in comprehension experiments.")
 ```
+
+### Production fillers
+
+```{r tbl prod fillers}
+# TODO colnames, manipulation name
+materials_df %>% 
+  filter(materials_id == fillers_id.03) %>% 
+  select(id, manipulation, prefix, good_completion, bad_completion) %>%
+  mutate(prefix=paste0(prefix, ".")) %>% 
+  arrange(manipulation, id) %>% 
+  select(-id) %>% 
+  knitr::kable("pipe",
+               col.names=R.utils::capitalize(colnames(.)),
+               caption="Filler items used in production experiments.")
+```
+
 
 
 # References 
