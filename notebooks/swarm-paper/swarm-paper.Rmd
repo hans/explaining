@@ -282,7 +282,7 @@ describe_copout = function() {
 }
 ```
 ```{r load raw data, echo=FALSE}
-DATA_VERSION = "2021-11-11-1440"
+DATA_VERSION = "2021-11-13-1126"
 raw_df <- read_csv(paste0("../../data/raw_data.", DATA_VERSION, ".csv"),
                    na=c("", "nan"),
                    col_types=cols()) %>% 

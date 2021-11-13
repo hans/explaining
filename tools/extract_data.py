@@ -54,7 +54,7 @@ def main(args):
     filler_paths = {
         "00_comprehension_swarm-construction-meaning": "swarm_comprehension-000-base",
         "02_acceptability_swarm": "swarm_acceptability-000-base",
-        "03_production_swarm_givenness": "swarm_production-001-twosentences",
+        "03_production_swarm-givenness": "swarm_production-001-twosentences",
         "04_comprehension_swarm-full": "swarm_comprehension-000-base",
         "08_acceptability_swarm-withprefix": "swarm_acceptability-001-withprefix",
         "09_comprehension_swarm-full-nonalternating-control": "swarm_comprehension-000-base"
