@@ -57,7 +57,7 @@ output            : papaja::apa6_pdf
 
 # knitr::opts_chunk$set(echo = TRUE)
 # knitr::opts_knit$set(root.dir = "")
-getwd()
+options(xfun.cache_rds.clean = FALSE)
 ```
 
 ```{r libraries, echo=FALSE}
