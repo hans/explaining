@@ -73,6 +73,7 @@ library(lmerTest)
 
 # Plotting
 library(ggbeeswarm)
+library(ggtext)
 
 # APA
 library(papaja)
@@ -309,16 +310,37 @@ materials_df <- na.omit(unique(all_items$materials_id)) %>%
 
 | $\rightarrow$ Given entity <br/> $\downarrow$ Construction | Agent/Theme | Location |
 | - | - | - |
-| A-construction | Bees! They are swarming in the garden. | The garden! Bees are swarming in it. |
-| L-construction | Bees! The garden is swarming with them. | The garden! It is swarming with bees. | 
+| A-construction | The town is trying to clean up the debris. It is flowing in the river. | The town is trying to clean up the river. Debris is flowing in it. |
+| L-construction | The town is trying to clean up the debris. The river is flowing with it. | The town is trying to clean up the river. It is flowing with debris. | 
 
 Table: An example experimental item varying across two factors: Given entity (Agent/Theme vs. Location) and Construction (A-construction vs. L-construction). TODO Bring in real prefix sentence, and maybe pick a better one. (ref:item-example)
 
 (ref:stimuli) Participants were shown English passages consisting of two sentences. Each passage varied within-participant and within-item by two factors: *Given entity* and *Construction type*. An example item in four varying conditions is shown in \@ref(item-example).
 
-The first sentence of each item established one of two possible event participants as a discourse referent: either the agent/theme (*Bees*) or the location (*The garden*), usually expressed using the exact same lexical item as in the following sentence, and in varying syntactic positions. (TODO introduce notion of establishing discourse referent.)
+The first sentence of each item established one of two possible event participants as a discourse referent: either the agent/theme (*debris*) or the location (*the river*), usually expressed using the exact same lexical item as in the following sentence, and in varying syntactic positions. (TODO introduce notion of establishing discourse referent.)
 
 The second sentence then used either the A-construction or L-construction to express the relevant relation between Agent/Theme and Location. The participant established as given in the first sentence was expressed pronominally in the second sentence. Non-pronominal Agent/Theme participants were realized as bare NPs, while non-pronominal locations were realized with definite determiners (*the* or *his/her/their* depending on the context). The A-construction used locative prepositions matching the path and manner of motion coded by the verb. 
+
+```{r set up running example, echo=FALSE}
+example = list(
+  agthm="debris",
+  location="river",
+  
+  Agiv="The town is trying to clean up the debris.",
+  Lgiv="The town is trying to clean up the river.",
+  
+  Acons="Debris is flowing in the river.",
+  Lcons="The river is flowing with debris.",
+  
+  prompt="How much debris is in the river?"
+)
+
+example$lbl_Agiv = paste0("Agent<br/>(*", example$Agiv, "*)")
+example$lbl_Lgiv = paste0("Location<br/>(*", example$Lgiv, "*)")
+
+example$lbl_Lcons = paste0("L-construction<br/>(*", example$Lcons, "*)")
+example$lbl_Acons = paste0("A-construction<br/>(*", example$Acons, "*)")
+```
 
 ### Experimental structure
 
@@ -430,10 +452,6 @@ model.02 = xfun::cache_rds({do_acceptability_regression(df.02.filtered, conditio
 model.02.print = papaja::apa_print(model.02$model)
 ```
 
-```{r 02 regression results, results="asis"}
-papaja::apa_table(model.02.print$table, caption="Acceptability regression results")
-```
-
 The regression shows a significant main effect relative to ungrammatical English items for both constructions (A-construction: `r model.02.print$statistic$contrast1`; L-construction: `r model.02.print$statistic$contrast0`).
 
 ```{r, fig.cap="Acceptability responses for L-construction, A-construction, and ungrammatical filler items, after controlling for by-item and by-subject random effects."}
@@ -452,9 +470,12 @@ df.02.filtered %>%
     stat_summary(fun=mean, geom="bar") +
     stat_summary(fun.data=mean_se, geom="errorbar") +
     scale_y_continuous(name="Acceptability rating", breaks=c(1, 2, 3, 4, 5, 6, 7)) +
-    scale_x_discrete(name="Condition", labels=c(`0`="L-construction", `1`="A-construction", 
-                                                "bad"="Ungrammatical fillers",
-                                                "good"="Grammatical fillers"))
+    scale_x_discrete(name="Condition", 
+                     labels=c(`0`=example$lbl_Lcons,
+                              `1`=example$lbl_Acons, 
+                              "bad"="Ungrammatical fillers",
+                              "good"="Grammatical fillers")) +
+    theme(axis.text.x=element_markdown())
 ```
 ```{r 02 raw responses by condition and item, fig.cap="Acceptability ratings by condition and item. Error bars indicate standard error."}
 plot_acceptability_by_item(df.02.filtered, condition_1,
@@ -678,8 +699,13 @@ df.00.filtered %>%
                  data=. %>% filter(condition_1 == "empty"), fun.data=mean_se,
                  geom="rect", xmin=0, xmax=Inf, alpha=0.5) +
   
-    scale_x_discrete("Construction type", labels=c(`0`="L-construction", `1`="A-construction")) +
-    scale_fill_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
+    scale_x_discrete("Construction type", 
+                     labels=c(`0`=example$lbl_Lcons,
+                              `1`=example$lbl_Acons)) +
+    scale_y_continuous(paste0("Estimated fullness<br/>(*", example$prompt, "*)")) +
+    scale_fill_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations")) +
+    theme(axis.text.x = element_markdown(),
+          axis.title.y = element_markdown())
 ```
 
 \@ref(00 plot raw responses) shows raw subject slider responses on sentences using the A-construction and L-construction. We see that subjects take the use of the L-construction to mean that the Location is more full (relative to the use of the A-construction).
@@ -827,7 +853,7 @@ We used subjects' behavior on filler items to determine an exclusion criterion. 
 `r Nretained.03` subjects (`r Nretained.03 / nrow(subject.exclude.03) * 100`%) were retained by this criterion.
 #### Results
 
-```{r 03 raw response plot, fig.cap="Proportion of subjects choosing A-construction as a function of the *Given entity* manipulation. Horizontal line indicates 50% (response due to random guessing)."}
+```{r 03 raw response plot, echo=FALSE, fig.cap="Proportion of subjects choosing A-construction as a function of the *Given entity* manipulation. Horizontal line indicates 50% (response due to random guessing)."}
 df.03.filtered %>% 
   filter(condition_0 != "filler") %>% 
   ggplot(aes(x=condition_0, y=as.numeric(agent_is_subject))) +
@@ -838,9 +864,15 @@ df.03.filtered %>%
     # reference line at y = 0.5
     geom_hline(yintercept=0.5) +
   
-    scale_x_discrete(name="Given entity", labels=c(`0`="Location", `1`="Agent")) +
-    scale_y_continuous(name="Proportion choosing A-construction",
-                       limits=c(0, 1))
+    scale_x_discrete(name="Given entity", 
+                     labels=c(`0`=example$lbl_Lgiv,
+                              `1`=example$lbl_Agiv)) +
+    scale_y_continuous(name=paste0("Proportion choosing A-construction",
+                                   "<br/>(*", example$Acons, "*)"),
+                       limits=c(0, 1)) +
+  
+    theme(axis.text.x = element_markdown(),
+          axis.title.y = element_markdown())
 ```
 \@ref(03 raw response plot) shows the proportion of subjects who chose completion sentences using the A-construction as a function of the *Given entity* in the first sentence. We see that subjects prefer to use the A-construction when the Agent/Theme is established as given by the previous sentence.
 
@@ -919,7 +951,7 @@ df.09c.filtered = df.09c %>%
 
 #### Results
 
-```{r 09c slider visualization, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
+```{r 09c slider visualization, echo=FALSE, fig.cap="Visualization of slider response behavior by subject. Boxplots show response behavior on filler items; we expect filler responses to lie at the extremes of the scale. Swarmplots show responses on experimental items.", cache=TRUE}
 df.09c %>%
 
   # Join in filler t-test results
@@ -1041,7 +1073,7 @@ demo_chunk(df.04.demo)
 
 We used the same exclusion criteria as in \@ref(experiment-swarm-comprehension-basic).
 
-```{r 04 exclusion}
+```{r 04 exclusion, echo=FALSE}
 subject.ttest.04 = run_slider_exclusions(
   df.04 %>% filter(condition_0 == "filler"), condition_1, full, empty)
 Nretained.04 = nrow(subject.ttest.04 %>% filter(!exclude))
@@ -1117,7 +1149,7 @@ model.04.hdis
 ```
 
 
-```{r 04 plot raw responses, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
+```{r 04 plot raw responses, echo=FALSE, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
 df.04.filtered %>% 
   ggplot(aes(x=location_is_subject, fill=agent_is_given, y=slider_value)) +
     stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
@@ -1134,7 +1166,10 @@ df.04.filtered %>%
   
     scale_fill_discrete("Given entity", labels=c(`TRUE`="Agent", `FALSE`="Location")) +
     scale_x_discrete("Construction type", labels=c(`TRUE`="L-construction", `FALSE`="A-construction")) +
-    scale_color_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations"))
+    scale_y_continuous(paste0("Estimated fullness<br/>(*", example$prompt, "*)")) +
+    scale_color_discrete("Filler responses", labels=c("empty"="Empty locations", "full"="Full locations")) +
+  
+    theme(axis.title.y = element_markdown())
 ```
 
 
