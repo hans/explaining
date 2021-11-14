@@ -347,7 +347,7 @@ Each experimental item related three elements: a **Verb** and two plausible even
 
 The participant established as given in the first sentence was expressed pronominally in the second sentence. Non-pronominal Agent/Theme participants were realized as bare NPs, while non-pronominal locations were realized with definite determiners (*the* or *his/her/their* depending on the context). The A-construction used locative prepositions matching the path and manner of motion coded by the verb. 
 
-\@ref(tab:item-example) shows an example item in the four possible combinations of these conditions. We varied these factors of *Given entity* and *Construction type* both within-participant and within-item; these assignments were pseudo-randomly counterbalanced in all experiments.
+Table \@ref(tab:item-example) shows an example item in the four possible combinations of these conditions. We varied these factors of *Given entity* and *Construction type* both within-participant and within-item; these assignments were pseudo-randomly counterbalanced in all experiments.
 
 <!-- TODO introduce notion of establishing discourse referent. -->
 
@@ -372,13 +372,13 @@ example$lbl_Lcons = paste0("L-construction<br/>(*", example$Lcons, "*)")
 example$lbl_Acons = paste0("A-construction<br/>(*", example$Acons, "*)")
 ```
 
-| Experiment | Behavior | Guiding question |
+| Section | Behavior | Guiding question |
 | - | - | - |
-| [1](#experiment-swarm-comprehension-full) | Comprehension | Are comprehenders' meaning inferences sensitive to evident features of discourse structure? |
-| C1 | Acceptability | Are A-constructions and L-constructions accepted by speakers? |
-| C2 | Comprehension | Do comprehenders infer a meaning contrast between A-constructions and L-constructions? |
-| [C3](#experiment-swarm-comprehension-control) | Comprehension | Do comprehenders infer a meaning contrast from our manipulations intended to influence discourse structure? |
-| C4 | Production | Do speakers select between A-constructions and L-constructions based on discourse structure? |
+| \@ref(experiment-swarm-comprehension-basic) | Comprehension | Do comprehenders infer a meaning contrast between A-constructions and L-constructions? |
+| \@ref(experiment-swarm-production-givenness) | Production | Do speakers select between A-constructions and L-constructions based on discourse structure? |
+| \@ref(experiment-swarm-comprehension-full) | Comprehension | Are comprehenders' meaning inferences sensitive to evident features of discourse structure? |
+| \@ref(experiment-swarm-acceptability), \@ref(experiment-swarm-acceptability-two) | Acceptability | Are A-constructions and L-constructions accepted by speakers? |
+| \@ref(experiment-swarm-comprehension-control) | Comprehension | Do comprehenders infer a meaning contrast from our manipulations intended to influence discourse structure? |
 
 Table: Overview of experiments.
 
@@ -540,7 +540,7 @@ We next confirmed that speakers were willing to select between the A-constructio
 
 ### Procedure
 
-```{r 03 vignette, fig.cap="Sample trial interface from the production experiment."}
+```{r 03-vignette, fig.cap="Sample trial interface from the production experiment."}
 knitr::include_graphics("figs/vignette_03.png")
 ```
 
@@ -709,7 +709,7 @@ df.04.filtered = df.04 %>%
 
 ### Results
 
-```{r 04-plot-raw-responses, warning=FALSE, echo=FALSE, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as vertical bands, also denoting mean and standard error of the mean."}
+```{r 04-plot-raw-responses, warning=FALSE, echo=FALSE, fig.cap="Slider responses by condition. Error bars indicate standard error of the mean. Responses on control items (with ground-truth full or empty locations) are shown as horizontal bands, also denoting mean and standard error of the mean."}
 df.04.filtered %>% 
   ggplot(aes(x=location_is_subject, fill=agent_is_given, y=slider_value)) +
     stat_summary(data=. %>% filter(condition_0 != "filler"), fun=mean,
@@ -768,6 +768,7 @@ We again found a positive effect of *Construction type* (`r print_brms_coef(mode
 TODO: calculate pMCMC p-value
 
 \newpage
+
 # (APPENDIX) Appendix {-}
 
 # Control experiments
