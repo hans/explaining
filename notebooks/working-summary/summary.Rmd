@@ -103,7 +103,7 @@ swarm_df_controlled = swarm_df %>%
 swarm_df_controlled %>%
   ggplot(aes(x=location_is_subject, y=slider_value_ranef_normed, color=agent_is_given)) +
   geom_boxplot() +
-  geom_quasirandom(dodge.width=0.75, alpha=0.3) +
+  geom_quasirandom(dodge.width=0.75, alpha=0.3)
   
   ggtitle("Slider responses, normalized using random effect estimates") +
   labs(y="Normalized slider value")
