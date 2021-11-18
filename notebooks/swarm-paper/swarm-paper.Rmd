@@ -334,6 +334,56 @@ materials_df <- na.omit(unique(all_items$materials_id)) %>%
 
 # Background
 
+## Comprehension as inverse inference
+
+TODO introduce causal forward model
+
+Several popular models of language comprehension explicitly pitch comprehension
+at the computational level, as performing a conditional inference on this
+causal network.
+
+Noisy-channel inference models, for example, posit that comprehenders carry out
+inverse inference over a noisy language production model when determining the
+intended message of a speaker [@levy2008noisychannel,@levy2009eye].
+Rational speech act (RSA) models likewise posit that comprehenders do inference
+over a model of production incorporating a speaker's knowledge state and
+available alternative utterances [@goodman2016pragmatic].
+
+Taken to its full extent, however, this claim leads to a tractability problem.
+TODO
+- need to marginalize over meanings/alternative structures
+- pragmatics models get around this by talking about restricted scales in
+  meaning space, or small generative algorithms for alternative utterances
+- also need to account for possible interactions & explaining-away effects
+  across levels of representation
+  - positive results here: TODO CITE Myslin CUNY paper
+  
+In this paper, we examine the particular production phenomenon of construction
+choice. The following sections will present the production phenomenon TODO
+- after which return to comprehension problem
+
+## Construction choice in production
+
+TODO introduce construction choice. running river/debris example
+- multiple near-synonymous ways to realize the same event / relation in language
+- specifically here: construction choice. choice of syntactic structure used to
+  relate participants of an event / relation
+  - define *construction*
+  - TODO figure out current model of production -- still the same two-phase
+    thing as presented in Ferreira et al.?
+  - other degrees of freedom: word choice, pronominalization
+- why do we have this degree of flexibility?
+- construction choice can serve multiple discourse functions
+
+### Meaning and construction choice
+
+TODO meaning effect on construction choice
+- ref Wolff causative/periphrastic causative
+- ref Goldberg meaning extension
+- ref Levin verb classes
+
+### Discourse structure and construction choice
+
 We next identified a factor which would influence construction choice but which
 was unrelated to the speaker's intended meaning.
 Speakers prefer to choose constructions which place entities already given in
@@ -354,6 +404,13 @@ positions (subject, object, or the subject of a complement clause), usually
 using the exact same lexical content as in the critical sentence.
 
 TODO: Figure out how to combine with item presentation below.
+
+## The challenge for comprehension
+
+TODO
+- so we've got two factors here: space of possible meanings and discourse state
+- present comprehension as Bayes' Rule here
+- point out marginalization difficulty
 
 # Procedure
 
@@ -789,6 +846,22 @@ We again found a positive effect of *Construction type* (`r print_brms_coef(mode
 TODO: calculate pMCMC p-value
 
 \newpage
+
+
+# Discussion
+
+## Available theories
+
+TODO
+- approximate inference
+  - approximately Bayesian with biased proposal
+- modular inference
+  - e.g. non-Bayesian discriminative mapping which simply doesn't take into
+    account the interaction we are sensitive to here in production
+- future work: separating these theories
+  - approximate model may be sensitive to priming (e.g. priming the relevant
+    meaning contrast), or task effects
+  - modular model will not be
 
 # (APPENDIX) Appendix {-}
 
