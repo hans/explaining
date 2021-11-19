@@ -423,21 +423,30 @@ TODO why choose *swarm* here?
 - meaning contrast is less *a priori* relevant for the syntax-semantics interface
 - so it's computationally more impressive if it works.
 
+Our experiments in this paper presented these forms of the *swarm* alternation
+to subjects and measured their resulting interpretations. In the following text
+we refer to these forms as variants of the *critical sentence*.
+
 ### Discourse structure and construction choice
 
 We next identified a factor which would influence construction choice but which
 was unrelated to the speaker's intended meaning.
 Speakers prefer to choose constructions which place entities already given in
 the discourse early in the linear order of a sentence [@bock1980syntactic,@prat-sala2000discourse].
+For example, @prat-sala2000discourse demonstrated in an image description
+paradigm that
+subjects varied in their preference for active or passive sentence forms
+in a way that allowed them to place discourse-given entities in grammatical
+subject position.
+
 We exploited this bias as a second pressure on construction choice: by
 manipulating which of the two entities (Agent/Theme or Location) was
 referentially available in the discourse, we expected speakers to have different
 preferences over the two construction options.
 
-<!-- TODO need to have "two entities" and also "critical sentence" in the CG
-by this point.-->
-We accomplished this by combining the critical sentence with a prefix sentence
-which mentioned either the Agent/Theme or Location of the relevant item:
+We accomplished this by combining the critical sentence (A-construction or
+L-construction, as described in the previous section) with a prefix sentence
+which mentioned either the Agent/Theme or Location of the relevant event:
 
 1. (*Agent/Theme as given*) The town is trying to clean up the **debris.**
 2. (*Location as given*) The town is trying to clean up the **river.**
