@@ -364,23 +364,64 @@ choice. The following sections will present the production phenomenon TODO
 
 ## Construction choice in production
 
-TODO introduce construction choice. running river/debris example
-- multiple near-synonymous ways to realize the same event / relation in language
-- specifically here: construction choice. choice of syntactic structure used to
-  relate participants of an event / relation
-  - define *construction*
-  - TODO figure out current model of production -- still the same two-phase
-    thing as presented in Ferreira et al.?
-  - other degrees of freedom: word choice, pronominalization
-- why do we have this degree of flexibility?
-- construction choice can serve multiple discourse functions
+Natural language affords speakers many degrees of freedom in communicating their
+message. For example, English has at least four forms which vary in their
+syntactic structure but communicate somewhat synonymous messages:
+
+1. Bees are buzzing in the garden.
+2. The garden is buzzing with bees.
+3. The garden is abuzz with bees.
+
+This choice of syntactic construction is one among many degrees of freedom
+available to the speaker, such as lexical choice (saying *bees* or *insects* or
+*buzzing things*) and anaphora and deixis (saying *them* or *those things* to
+refer to the bees, or *here* or *there* to refer to the garden; see e.g.
+@kehler2008coherence).
+
+We are interested in the phenomenon of construction choice in particular
+because speakers take into account factors at multiple levels of representation
+when choosing a construction: they use different constructions to signal
+differences in intended meaning, but also navigate among structures in a way
+that keeps a discourse coherent.
+<!-- While other production decisions such as -->
+<!-- pronominalization depend on multiple interacting -->
+<!-- pressures, the link BLAH BLAH more computationally interesting -->
+
+The following sections present two independent factors which speakers take into
+account when choosing a construction: intended meaning and discourse coherence.
 
 ### Meaning and construction choice
 
-TODO meaning effect on construction choice
-- ref Wolff causative/periphrastic causative
-- ref Goldberg meaning extension
-- ref Levin verb classes
+Speakers use different syntactic constructions to signal their
+interpretation of or perspective on an event.
+For example, @wolf2003direct
+demonstrated with a forced-choice production paradigm that speakers alternate
+between a lexical causative (*She opened the door*) and a periphrastic
+causative (*She caused the door to open*) depending on properties of the evident
+causal link between the agent and patient.
+
+<!-- TODO is this para relevant? -->
+Aspects of lexical meaning also constrain speakers' choice of constructions.
+@levin1993english demonstrated how many fine-grained meaning contrasts govern
+differences in verbs' syntactic distribution. For example, English verbs of
+caused motion which do not lexicalize a path of motion cannot appear in a
+simple transitive without modification (*\*She put the shelf*) while verbs
+which code paths can do so (*She raised/lowered/lifted/dropped the shelf*).
+
+In this paper, we study a minimal pair of constructions known as the *swarm*
+alternation, which describe an active relationship between an Agent/Theme and a
+Location [@salkoff1983bees,@dowty2001semantic]:
+
+1a. (A-construction) Bees are swarming in the garden.
+1b. (L-construction) The garden is swarming with bees.
+2a. (A-construction) Debris is flowing in the river.
+2b. (L-construction) The river is flowing with debris.
+
+TODO meaning contrast according to Salkoff/Dowty.
+
+TODO why choose *swarm* here?
+- meaning contrast is less *a priori* relevant for the syntax-semantics interface
+- so it's computationally more impressive if it works.
 
 ### Discourse structure and construction choice
 
@@ -393,6 +434,8 @@ manipulating which of the two entities (Agent/Theme or Location) was
 referentially available in the discourse, we expected speakers to have different
 preferences over the two construction options.
 
+<!-- TODO need to have "two entities" and also "critical sentence" in the CG
+by this point.-->
 We accomplished this by combining the critical sentence with a prefix sentence
 which mentioned either the Agent/Theme or Location of the relevant item:
 
@@ -426,6 +469,7 @@ Table: (\#tab:item-example) An example experimental item varying across two fact
 Each experimental item related three elements: a **Verb** and two plausible event participants, an **Agent/Theme** and a **Location**. We selected verbs which we believed could naturally appear in both the A-construction and L-construction (but later verified this with acceptability rating studies; see Section \@ref(experiment-swarm-acceptability)). For each item we designed two stimulus sentences: a first sentence which established one of the two event participants as a referent (the *Given entity*) in the discourse, expressed in varying syntactic positions; and a second sentence which used the Verb in either the A-construction or L-construction (the *Construction type*) with the two participants.
 
 The participant established as given in the first sentence was expressed pronominally in the second sentence. Non-pronominal Agent/Theme participants were realized as bare NPs, while non-pronominal locations were realized with definite determiners (*the* or *his/her/their* depending on the context). The A-construction used locative prepositions matching the path and manner of motion coded by the verb.
+<!-- TODO address complication: syntactic position of entity in first sentence will push for/against pronominalization in the second sentence to a different degree. prior grammatical subjects are likely to be referred to pronominally. see @rohde2014grammatical, @kehler2008coherence -->
 
 Table \@ref(tab:item-example) shows an example item in the four possible combinations of these conditions. We varied these factors of *Given entity* and *Construction type* both within-participant and within-item; these assignments were pseudo-randomly counterbalanced in all experiments.
 
