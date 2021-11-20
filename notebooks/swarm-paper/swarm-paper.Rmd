@@ -903,7 +903,90 @@ TODO: calculate pMCMC p-value
 
 # Discussion
 
-## Available theories
+We designed an experiment testing whether comprehenders' inferences about
+speaker meaning reflected the normative pattern of Bayesian inference known
+as *explaining away*. Specifically, after confirming that comprehenders were
+sensitive to the meaning difference between two syntactic constructions, we
+asked whether they would modulate this meaning inference when other 
+countervailing pressures for construction choice were evident.
+
+Our results find no significant explaining-away effect in comprehenders'
+meaning inferences. This is despite the fact that they clearly recognize
+the basic difference in meaning due to construction (confirmed in Section
+\@ref(experiment-swarm-comprehension-basic)) and also demonstrate a willingness
+to alternate between the two constructions to maintain discourse coherence
+(confirmed in Section \@ref(experiment-swarm-production-givenness)).
+
+## Available explanations
+
+There are two broad types of explanation which could admit these results: an
+*approximately Bayesian* account, or an *anti-Bayesian* account.
+
+### Approximate Bayesian inference
+
+On the approximately Bayesian account, comprehenders are indeed solving a
+problem of Bayesian inverse inference at the computational level, but must make
+sacrifices for algorithmic tractability. Many computational cognitive models
+make this move, explaining classes of error as resulting from biases in an
+approximate inference algorithm [TODO CITE].
+
+<!-- TODO needs a little more hand-holding here to be intuitive for less computational reader. -->
+Concretely in this case, we could imagine a sampling-based approximate inverse
+inference algorithm producing these results. On this view, speakers possess a
+generative model of utterances $P(u \mid m)$ deployed in production. But
+deploying this same model in comprehension according to Bayesian norms is
+massively intractable. Consider the inverse inference following Bayes' rule:
+
+$$
+P(m \mid u) = \frac{P(u \mid m) P(m)}{P(u)} = \frac{P(u \mid m) P(m)}{\sum_{m'} P(u \mid m') P(m')}
+$$
+
+Computing this distribution $P(m \mid u)$ thus requires marginalizing over all
+possible alternative meanings $m'$. As we demonstrated in the introduction,
+however, this normalizing value is just what enables the explaining-away effect.
+<!-- TODO say a few more words about why this is intractable -->
+
+A sample-based approximation to this normalizing value might incorporate some
+*proposal function* $q(m \mid C)$, which proposes potential meanings based on
+features of
+the context $C$. This proposal function can be structurally and computationally
+simpler than the actual normative model $P(m \mid u)$.
+Given minimal assumptions about the behavior of $q$ hold, we
+can approximate this normalizing value $P(u)$ by drawing proposals of
+$m$ from this model and reweighting them according to the generative model
+$P(u \mid m)$:
+
+$$
+\begin{eqnarray*}
+&P(u) &= \sum_{m'} P(u \mid m') P(m') \\
+&     &= \sum_{m'} q(m' \mid C) \frac{P(u \mid m') P(m')}{q(m' \mid C)} \\
+&     &= \mathbb E_{q(m' \mid C)} \left[ \frac{P(u \mid m') P(m')}{q(m' \mid C)} \right]
+\end{eqnarray*}
+$$
+
+A proposal function $q$ could enable much more efficient inferences about
+speakers' intended meanings, but would do so at the cost of introducing bias.
+In our particular case, this proposal function may fail to consider alternative
+meanings instantiating the *full*--*empty* contrast, and thus fail to bring
+about the explaining-away effect.
+
+This explanation makes a substantial prediction. Such a mechanism of approximate
+inverse inference would likely be sensitive to contextual factors. Concretely,
+we should be able to design a task (or a priming design) which makes extremely
+salient the relevant *full*-*empty* meaning distinction. Increasing the salience
+of these alternative meanings should then lead comprehenders to exhibit the
+expected explaining-away effect.
+<!-- TODO are there examples of the above design for other approx Bayesian accounts? -->
+
+### Non-Bayesian inference
+
+It is also possible that "Bayesian" is not a suitable word to describe the
+behavior of comprehenders in our experiment. The time pressure of comprehension
+may be too great to support this level of inferential complexity. Instead,
+the inference about intended meanings $m$ given an utterance $u$ may simply be
+computationally distinct, implemented as a discriminative mapping $P(m \mid u)$.
+This mapping may share parameters with speakers' production model, but may
+crucially omit some structural features of the production model -- in our case
 
 TODO
 - approximate inference
