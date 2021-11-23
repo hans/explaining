@@ -344,7 +344,7 @@ causal network.
 
 Noisy-channel inference models, for example, posit that comprehenders carry out
 inverse inference over a noisy language production model when determining the
-intended message of a speaker [@levy2008noisychannel,@levy2009eye].
+intended message of a speaker [@levy2008noisychannel;@levy2009eye].
 Rational speech act (RSA) models likewise posit that comprehenders do inference
 over a model of production incorporating a speaker's knowledge state and
 available alternative utterances [@goodman2016pragmatic].
@@ -394,7 +394,7 @@ account when choosing a construction: intended meaning and discourse coherence.
 
 Speakers use different syntactic constructions to signal their
 interpretation of or perspective on an event.
-For example, @wolf2003direct
+For example, @wolff2003direct
 demonstrated with a forced-choice production paradigm that speakers alternate
 between a lexical causative (*She opened the door*) and a periphrastic
 causative (*She caused the door to open*) depending on properties of the evident
@@ -410,7 +410,7 @@ which code paths can do so (*She raised/lowered/lifted/dropped the shelf*).
 
 In this paper, we study a minimal pair of constructions known as the *swarm*
 alternation, which describe an active relationship between an Agent/Theme and a
-Location [@salkoff1983bees,@dowty2001semantic]:
+Location [@salkoff1983bees;@dowty2001semantic]:
 
 1a. (A-construction) Bees are swarming in the garden.
 1b. (L-construction) The garden is swarming with bees.
@@ -432,7 +432,7 @@ we refer to these forms as variants of the *critical sentence*.
 We next identified a factor which would influence construction choice but which
 was unrelated to the speaker's intended meaning.
 Speakers prefer to choose constructions which place entities already given in
-the discourse early in the linear order of a sentence [@bock1980syntactic,@prat-sala2000discourse].
+the discourse early in the linear order of a sentence [@bock1980syntactic;@prat-sala2000discourse].
 For example, @prat-sala2000discourse demonstrated in an image description
 paradigm that
 subjects varied in their preference for active or passive sentence forms
@@ -957,11 +957,11 @@ $m$ from this model and reweighting them according to the generative model
 $P(u \mid m)$:
 
 $$
-\begin{eqnarray*}
-&P(u) &= \sum_{m'} P(u \mid m') P(m') \\
-&     &= \sum_{m'} q(m' \mid C) \frac{P(u \mid m') P(m')}{q(m' \mid C)} \\
-&     &= \mathbb E_{q(m' \mid C)} \left[ \frac{P(u \mid m') P(m')}{q(m' \mid C)} \right]
-\end{eqnarray*}
+\begin{aligned}
+P(u) &= \sum_{m'} P(u \mid m') P(m') \\
+     &= \sum_{m'} q(m' \mid C) \frac{P(u \mid m') P(m')}{q(m' \mid C)} \\
+     &= \mathbb E_{q(m' \mid C)} \left[ \frac{P(u \mid m') P(m')}{q(m' \mid C)} \right]
+\end{aligned}
 $$
 
 A proposal function $q$ could enable much more efficient inferences about
@@ -986,18 +986,11 @@ may be too great to support this level of inferential complexity. Instead,
 the inference about intended meanings $m$ given an utterance $u$ may simply be
 computationally distinct, implemented as a discriminative mapping $P(m \mid u)$.
 This mapping may share parameters with speakers' production model, but may
-crucially omit some structural features of the production model -- in our case
+crucially omit some structural features of the production model -- in our case,
+the inferential link between evident discourse pressures on the speaker and
+the intended meaning of their message.
 
-TODO
-- approximate inference
-  - approximately Bayesian with biased proposal
-- modular inference
-  - e.g. non-Bayesian discriminative mapping which simply doesn't take into
-    account the interaction we are sensitive to here in production
-- future work: separating these theories
-  - approximate model may be sensitive to priming (e.g. priming the relevant
-    meaning contrast), or task effects
-  - modular model will not be
+TODO reference points for this sort of model? cf. Meilin's paper?
 
 # (APPENDIX) Appendix {-}
 
@@ -1185,10 +1178,13 @@ df.08.filtered %>%
 ```
 
 ```{r 08 raw responses by condition and item, fig.cap="Acceptability ratings by condition and item. Error bars indicate standard error."}
+# TODO improve labeling
 plot_acceptability_by_item(df.08.filtered, condition,
                            condition_labels=c("cLgL"="cLgL", "cLgA"="cLgA",
                                               "cAgA"="cAgA", "cAgL"="cAgL"))
 ```
+
+TODO summarize in words.
 
 ## Controlling for the effect of the prefix sentence {#experiment-swarm-comprehension-control}
 
@@ -1280,6 +1276,11 @@ model.09c.hdis = model.09c.fixef_draws %>%
   select(-starts_with(".")) %>% map(~{hdci(.)})
 model.09c.hdis
 ```
+
+TODO finish analysis, then summarize in words. Analysis plan:
+- model comparison between (both with maximal random effects)
+  - base model: `slider_value ~ 0`
+  - full model: `slider_value ~ agent_is_given`
 
 # Materials
 ## Comprehension materials
