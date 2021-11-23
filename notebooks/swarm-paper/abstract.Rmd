@@ -1,0 +1,59 @@
+---
+title: "abstract"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+TODO introduce A-construction, L-construction, Agent/Theme, Location.
+
+We first expected a main effect of *Construction type*: sentences with the
+L-construction should lead speakers to infer that the Location is relatively
+full, compared to sentences with the A-construction.
+We also expected a main effect of *Given entity*. Because speakers generally
+place given entities earlier in the linear order of a sentence, use of the
+L-construction in cases where an Agent/Theme is given should induce listeners
+to infer that an alternative pressure for choice of the L-construction is
+especially strong -- that the Location is very full. Likewise, use of the
+A-construction in cases where a Location is given should induce listeners to
+infer that the Location is relatively empty.
+
+We designed TODO experimental items, each relating an Agent/Theme (e.g. *debris*)
+and Location (e.g. *river*) with some Verb (e.g. *flow*). These were combined
+to form either an A-construction (*Debris is flowing in the river*) or
+L-construction (*The river is flowing with debris*). Each item also included
+two prefix sentences, establishing either the Agent/Theme or Location as given
+(e.g. *The town is trying to clean up the \{debris, river\}.*).
+
+We first confirmed that English speakers were aware of these two relevant
+factors influencing construction choice.
+In a first comprehension experiment,
+we presented subjects (N=TODO) with single sentences drawn from the experimental
+items using either the A-construction or L-construction, and asked them to rate
+"how much \<Agent/Theme\> is in the \<Location\>",
+using a continuous slider ranging from "0% / none" to "100% / as much as there
+could be." We varied construction type within-subject and within-item, with
+assignments counterbalanced among participants.
+A mixed-effects beta regression model revealed that subjects take the use of the
+L-construction (relative to the A-construction) to denote more full Locations
+(`r print_brms_coef(model.00, "location_is_subject1")`)
+
+We next confirmed that subjects exhibited a preference for constructions that
+placed discourse-given entities earlier in a sentence's linear order.
+We presented subjects (N=TODO) with a pair of two-sentence passages. Each passage
+began with the same prefix sentence, establishing either the Agent/Theme or
+Location as given, and completed with either the A-construction or L-construction.
+We asked subjects to rate the more natural of these two passages. The prefix
+sentence was varied within-item and within-subject.
+A mixed-effects logistic regression model revealed that subjects prefer to use
+the A-construction when the Agent/Theme is established as given, and the
+L-construction when the Location is given (`r model.03.print$full_result$agent_is_given1`).
+
+Our final experiment asked whether subjects (N=TODO) would combine their
+knowledge of these two pressures on construction choice to infer differences in
+meaning. This experiment repeated the procedure of the earlier comprehension
+experiment, but presented stimuli with both a prefix sentence establishing a
+*Given entity* and a second sentence varying in *Construction type*. Both
+factors were varied within-subject and within-item.
